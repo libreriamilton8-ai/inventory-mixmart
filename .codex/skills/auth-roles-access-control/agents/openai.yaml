@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auth Roles Access Control"
+  short_description: "Authentication and RBAC implementation guide"
+  default_prompt: "Use $auth-roles-access-control to design authentication, sessions, and role-based access control."

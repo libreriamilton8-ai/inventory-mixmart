@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Architecture Rules"
+  short_description: "Frontend conventions for production apps"
+  default_prompt: "Use $frontend-architecture-rules to define architecture and implementation rules for this frontend."

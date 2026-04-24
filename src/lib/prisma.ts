@@ -1,11 +1,18 @@
 import { PrismaClient } from "../../prisma/generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { inventorySoftDeleteExtension } from "../../prisma/extensions/soft-delete.extension";
+import { getDatabaseConnection } from "./database-url";
 
 const prismaClientSingleton = () => {
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  });
+  const database = getDatabaseConnection();
+  const adapter = new PrismaPg(
+    {
+      connectionString: database.connectionString,
+    },
+    {
+      schema: database.schema,
+    },
+  );
   const prismaRaw = new PrismaClient({ adapter });
 
   return {

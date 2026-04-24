@@ -1,66 +1,66 @@
-/* import { PrismaClient } from './generated/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
+import "dotenv/config";
 
-const prisma = new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL,
-}).$extends(withAccelerate());
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const main = async () => {
-  console.time('Seeding complete 🌱');
+import { PrismaClient } from "./generated/client";
+import { getDatabaseConnection } from "../src/lib/database-url";
+import { hashPassword } from "../src/lib/password";
 
-  await prisma.quotes.createMany({
-    skipDuplicates: true,
-    data: [
-      { quote: 'The only way to do great work is to love what you do.' },
-      {
-        quote:
-          'Success is not final, failure is not fatal: It is the courage to continue that counts.',
-      },
-      { quote: 'In the middle of every difficulty lies opportunity.' },
-      { quote: "Believe you can and you're halfway there." },
-      { quote: 'The best way to predict the future is to create it.' },
-      { quote: "Don't watch the clock; do what it does. Keep going." },
-      { quote: 'The only thing we have to fear is fear itself.' },
-      { quote: 'The journey of a thousand miles begins with a single step.' },
-      { quote: 'If you can dream it, you can achieve it.' },
-      { quote: 'Innovation distinguishes between a leader and a follower.' },
-      {
-        quote:
-          'The greatest glory in living lies not in never falling, but in rising every time we fall.',
-      },
-      { quote: "You miss 100% of the shots you don't take." },
-      {
-        quote:
-          'The only limit to our realization of tomorrow will be our doubts of today.',
-      },
-      { quote: 'Change your thoughts and you change your world.' },
-      {
-        quote:
-          'To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.',
-      },
-      {
-        quote:
-          "The only thing standing between you and your goal is the story you keep telling yourself as to why you can't achieve it.",
-      },
-      { quote: 'Life is 10% what happens to us and 90% how we react to it.' },
-      {
-        quote:
-          'The future belongs to those who believe in the beauty of their dreams.',
-      },
-      {
-        quote:
-          'Do not wait for the perfect moment, take the moment and make it perfect.',
-      },
-      { quote: 'The only source of knowledge is experience.' },
-    ],
+const ADMIN_EMAIL =
+  process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ||
+  "libreriamilton8@gmail.com";
+const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD;
+
+const database = getDatabaseConnection();
+const adapter = new PrismaPg(
+  {
+    connectionString: database.connectionString,
+  },
+  {
+    schema: database.schema,
+  },
+);
+const prisma = new PrismaClient({ adapter });
+
+async function main() {
+  if (!ADMIN_PASSWORD) {
+    throw new Error("ADMIN_SEED_PASSWORD is required to seed the administrator.");
+  }
+
+  const passwordHash = await hashPassword(ADMIN_PASSWORD);
+
+  await prisma.user.upsert({
+    where: {
+      email: ADMIN_EMAIL,
+    },
+    create: {
+      username: "admin",
+      email: ADMIN_EMAIL,
+      firstName: "Administrador",
+      lastName: "MixMart",
+      passwordHash,
+      role: "ADMIN",
+      isActive: true,
+    },
+    update: {
+      username: "admin",
+      firstName: "Administrador",
+      lastName: "MixMart",
+      passwordHash,
+      role: "ADMIN",
+      isActive: true,
+      deletedAt: null,
+    },
   });
 
-  console.timeEnd('Seeding complete 🌱');
-};
+  console.log(`Seeded admin user: ${ADMIN_EMAIL}`);
+}
 
 main()
-  .then(() => {
-    console.log('Process completed');
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
   })
-  .catch((e) => console.log(e));
- */
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

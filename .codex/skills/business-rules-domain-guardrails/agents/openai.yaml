@@ -1,0 +1,4 @@
+interface:
+  display_name: "Business Rules Guardrails"
+  short_description: "Domain invariants for Prisma and PostgreSQL"
+  default_prompt: "Use $business-rules-domain-guardrails to turn requirements into enforceable business rules."
