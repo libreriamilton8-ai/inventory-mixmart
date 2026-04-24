@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, beforeEach, test } from "node:test";
 
-import type { PrismaClient } from "../prisma/generated/client";
+import type { Prisma, PrismaClient } from "../prisma/generated/client";
+import { inventorySoftDeleteExtension } from "../prisma/extensions/soft-delete.extension";
 import {
   decimalToNumber,
   expectDbError,
@@ -40,7 +41,7 @@ async function createUser() {
   });
 }
 
-async function createSupplier(overrides: Record<string, any> = {}) {
+async function createSupplier(overrides: Partial<Prisma.SupplierCreateInput> = {}) {
   return prisma.supplier.create({
     data: {
       name: `Supplier ${Math.random().toString(36).slice(2, 8)}`,
@@ -52,7 +53,7 @@ async function createSupplier(overrides: Record<string, any> = {}) {
   });
 }
 
-async function createProduct(overrides: Record<string, any> = {}) {
+async function createProduct(overrides: Partial<Prisma.ProductCreateInput> = {}) {
   return prisma.product.create({
     data: {
       name: `Product ${Math.random().toString(36).slice(2, 8)}`,
@@ -104,6 +105,32 @@ test("RF-03/RF-09/RF-10/RF-11: snacks require lot metadata and only RECEIVED ent
     category: "SNACKS",
     minimumStock: 5,
   });
+
+  await expectDbError(
+    prisma.stockEntry.create({
+      data: {
+        supplierId: supplier.id,
+        createdById: user.id,
+        status: "ORDERED",
+        orderedAt: new Date("2026-04-22T10:00:00.000Z"),
+        receivedAt: new Date("2026-04-22T11:00:00.000Z"),
+      },
+    }),
+    "chk_stock_entries_status_received_at",
+  );
+
+  await expectDbError(
+    prisma.stockEntry.create({
+      data: {
+        supplierId: supplier.id,
+        createdById: user.id,
+        status: "RECEIVED",
+        orderedAt: new Date("2026-04-22T10:00:00.000Z"),
+        receivedAt: new Date("2026-04-22T09:59:00.000Z"),
+      },
+    }),
+    "chk_stock_entries_status_received_at",
+  );
 
   const orderedEntry = await prisma.stockEntry.create({
     data: {
@@ -451,12 +478,35 @@ test("RF-21/RF-22/RF-23/RF-24: in-house services consume supplies automatically 
   });
   assert.equal(decimalToNumber(serviceConsumption.quantity), 6);
 
+  await expectDbError(
+    prisma.serviceType.update({
+      where: { id: copyService.id },
+      data: { kind: "OUTSOURCED" },
+    }),
+    "ServiceType.kind cannot change after service records exist",
+  );
+
   const outsourcedType = await prisma.serviceType.create({
     data: {
       name: "External Printing",
       kind: "OUTSOURCED",
     },
   });
+
+  await expectDbError(
+    prisma.serviceRecord.create({
+      data: {
+        serviceTypeId: outsourcedType.id,
+        createdById: user.id,
+        kind: "OUTSOURCED",
+        status: "DELIVERED",
+        quantity: 1,
+        serviceDate: new Date("2026-04-22T15:00:00.000Z"),
+        externalVendorName: "Partner Shop",
+      },
+    }),
+    "chk_service_records_status_delivered_at",
+  );
 
   await prisma.serviceRecord.create({
     data: {
@@ -625,4 +675,178 @@ test("RF-17/RF-18/RF-19/RF-20/RF-25/RF-26/RF-27/RF-28/RF-29: stock, alerts, move
   });
   assert.equal(serviceSummary.length, 1);
   assert.equal(serviceSummary[0]!.status, "DELIVERED");
+});
+
+test("Soft delete extension: catalog deletes are hidden, restorable, and bypassable", async () => {
+  const softPrisma = prisma.$extends(inventorySoftDeleteExtension);
+
+  const supplier = await softPrisma.supplier.create({
+    data: {
+      name: "Soft Delete Supplier",
+      ruc: "20999999991",
+      phone: "999999999",
+      contactName: "Soft Delete Contact",
+    },
+  });
+  const product = await softPrisma.product.create({
+    data: {
+      name: "Soft Delete Product",
+      category: "BAZAAR",
+      unitName: "unit",
+      purchasePrice: 3,
+      minimumStock: 1,
+    },
+  });
+
+  await softPrisma.productSupplier.create({
+    data: {
+      productId: product.id,
+      supplierId: supplier.id,
+      isPreferred: true,
+    },
+  });
+
+  assert.equal(await softPrisma.supplier.count(), 1);
+
+  const deletedSupplier = await softPrisma.supplier.delete({
+    where: { id: supplier.id },
+  });
+  assert.ok(deletedSupplier.deletedAt);
+  assert.equal(
+    await softPrisma.supplier.findUnique({ where: { id: supplier.id } }),
+    null,
+  );
+  assert.equal(
+    await softPrisma.supplier.findFirst({ where: { id: supplier.id } }),
+    null,
+  );
+  assert.equal(await softPrisma.supplier.count(), 0);
+
+  await assert.rejects(() =>
+    softPrisma.supplier.findUniqueOrThrow({ where: { id: supplier.id } }),
+  );
+  await assert.rejects(() =>
+    softPrisma.supplier.update({
+      where: { id: supplier.id },
+      data: { notes: "This should stay hidden" },
+    }),
+  );
+  await assert.rejects(() =>
+    softPrisma.supplier.upsert({
+      where: { id: supplier.id },
+      update: { notes: "Unsafe upsert" },
+      create: {
+        name: "Unsafe Upsert Supplier",
+        ruc: "20999999992",
+        phone: "999999999",
+        contactName: "Unsafe Upsert Contact",
+      },
+    }),
+    /Upsert is disabled/,
+  );
+
+  const rawDeletedSupplier = await prisma.supplier.findUniqueOrThrow({
+    where: { id: supplier.id },
+  });
+  assert.ok(rawDeletedSupplier.deletedAt);
+
+  const explicitlyDeletedSuppliers = await softPrisma.supplier.findMany({
+    where: { deletedAt: { not: null } },
+  });
+  assert.deepEqual(
+    explicitlyDeletedSuppliers.map((row) => row.id),
+    [supplier.id],
+  );
+
+  const supplierAggregate = await softPrisma.supplier.aggregate({
+    _count: { _all: true },
+  });
+  assert.equal(supplierAggregate._count._all, 0);
+
+  const restoredSupplier = await softPrisma.supplier.restore({
+    id: supplier.id,
+  });
+  assert.equal(restoredSupplier.deletedAt, null);
+  assert.equal(await softPrisma.supplier.count(), 1);
+
+  const deletedLink = await softPrisma.productSupplier.delete({
+    where: {
+      productId_supplierId: {
+        productId: product.id,
+        supplierId: supplier.id,
+      },
+    },
+  });
+  assert.ok(deletedLink.deletedAt);
+  assert.equal(
+    await softPrisma.productSupplier.count({
+      where: { productId: product.id },
+    }),
+    0,
+  );
+
+  await softPrisma.productSupplier.restore({
+    productId_supplierId: {
+      productId: product.id,
+      supplierId: supplier.id,
+    },
+  });
+  assert.equal(
+    await softPrisma.productSupplier.count({
+      where: { productId: product.id },
+    }),
+    1,
+  );
+
+  assert.equal(
+    (
+      await softPrisma.supplier.deleteMany({
+        where: { ruc: { startsWith: "2099999999" } },
+      })
+    ).count,
+    1,
+  );
+  assert.equal(
+    (
+      await softPrisma.supplier.deleteMany({
+        where: { ruc: { startsWith: "2099999999" } },
+      })
+    ).count,
+    0,
+  );
+  assert.equal(
+    (await softPrisma.supplier.restoreMany({ ruc: supplier.ruc })).count,
+    1,
+  );
+
+  const hardDeletedSupplier = await softPrisma.supplier.hardDelete({
+    id: supplier.id,
+  });
+  assert.equal(hardDeletedSupplier.id, supplier.id);
+  assert.equal(
+    await prisma.supplier.findUnique({ where: { id: supplier.id } }),
+    null,
+  );
+});
+
+test("Soft delete extension does not replace append-only history protections", async () => {
+  const softPrisma = prisma.$extends(inventorySoftDeleteExtension);
+  const user = await createUser();
+  const supplier = await createSupplier();
+  const entry = await prisma.stockEntry.create({
+    data: {
+      supplierId: supplier.id,
+      createdById: user.id,
+      status: "ORDERED",
+    },
+  });
+
+  await expectDbError(
+    softPrisma.stockEntry.delete({ where: { id: entry.id } }),
+    "append-only",
+  );
+  await assert.rejects(
+    () => softPrisma.stockEntry.restore({ id: entry.id }),
+    /not configured for soft delete/,
+  );
 });

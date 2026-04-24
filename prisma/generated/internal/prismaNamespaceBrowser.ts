@@ -164,8 +164,7 @@ export const StockEntryScalarFieldEnum = {
   referenceNumber: 'referenceNumber',
   notes: 'notes',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type StockEntryScalarFieldEnum = (typeof StockEntryScalarFieldEnum)[keyof typeof StockEntryScalarFieldEnum]
@@ -181,8 +180,7 @@ export const StockEntryItemScalarFieldEnum = {
   lotNumber: 'lotNumber',
   expirationDate: 'expirationDate',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type StockEntryItemScalarFieldEnum = (typeof StockEntryItemScalarFieldEnum)[keyof typeof StockEntryItemScalarFieldEnum]
@@ -200,8 +198,7 @@ export const InventoryLotScalarFieldEnum = {
   unitCost: 'unitCost',
   lastMovementAt: 'lastMovementAt',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type InventoryLotScalarFieldEnum = (typeof InventoryLotScalarFieldEnum)[keyof typeof InventoryLotScalarFieldEnum]
@@ -214,8 +211,7 @@ export const StockOutputScalarFieldEnum = {
   occurredAt: 'occurredAt',
   notes: 'notes',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type StockOutputScalarFieldEnum = (typeof StockOutputScalarFieldEnum)[keyof typeof StockOutputScalarFieldEnum]
@@ -228,8 +224,7 @@ export const StockOutputItemScalarFieldEnum = {
   quantity: 'quantity',
   unitCost: 'unitCost',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type StockOutputItemScalarFieldEnum = (typeof StockOutputItemScalarFieldEnum)[keyof typeof StockOutputItemScalarFieldEnum]
@@ -275,8 +270,7 @@ export const ServiceRecordScalarFieldEnum = {
   externalVendorName: 'externalVendorName',
   notes: 'notes',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type ServiceRecordScalarFieldEnum = (typeof ServiceRecordScalarFieldEnum)[keyof typeof ServiceRecordScalarFieldEnum]
@@ -288,8 +282,7 @@ export const ServiceConsumptionScalarFieldEnum = {
   productId: 'productId',
   quantity: 'quantity',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt'
 } as const
 
 export type ServiceConsumptionScalarFieldEnum = (typeof ServiceConsumptionScalarFieldEnum)[keyof typeof ServiceConsumptionScalarFieldEnum]

@@ -1,3 +1,507 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "mixmart";
+
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'WORKER');
+
+-- CreateEnum
+CREATE TYPE "ProductCategory" AS ENUM ('SCHOOL_SUPPLIES', 'BAZAAR', 'SNACKS');
+
+-- CreateEnum
+CREATE TYPE "StockEntryStatus" AS ENUM ('ORDERED', 'RECEIVED');
+
+-- CreateEnum
+CREATE TYPE "StockOutputReason" AS ENUM ('SALE', 'WASTE', 'INTERNAL_USE');
+
+-- CreateEnum
+CREATE TYPE "ServiceKind" AS ENUM ('IN_HOUSE', 'OUTSOURCED');
+
+-- CreateEnum
+CREATE TYPE "ServiceStatus" AS ENUM ('RECEIVED', 'IN_PROGRESS', 'COMPLETED', 'DELIVERED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "StockMovementDirection" AS ENUM ('IN', 'OUT');
+
+-- CreateEnum
+CREATE TYPE "StockMovementType" AS ENUM ('PURCHASE_ENTRY', 'SALE', 'WASTE', 'INTERNAL_USE', 'SERVICE_CONSUMPTION');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" UUID NOT NULL,
+    "dni" VARCHAR(10),
+    "username" VARCHAR(50) NOT NULL,
+    "email" VARCHAR(254),
+    "first_name" VARCHAR(50) NOT NULL,
+    "last_name" VARCHAR(50) NOT NULL,
+    "phone" VARCHAR(30),
+    "date_of_birth" DATE,
+    "password_hash" VARCHAR(255) NOT NULL,
+    "role" "UserRole" NOT NULL,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "last_login_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "suppliers" (
+    "id" UUID NOT NULL,
+    "ruc" VARCHAR(20) NOT NULL,
+    "name" VARCHAR(150) NOT NULL,
+    "phone" VARCHAR(30) NOT NULL,
+    "contact_name" VARCHAR(120) NOT NULL,
+    "address" VARCHAR(250),
+    "notes" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "suppliers_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "products" (
+    "id" UUID NOT NULL,
+    "sku" VARCHAR(50),
+    "barcode" VARCHAR(64),
+    "name" VARCHAR(150) NOT NULL,
+    "description" TEXT,
+    "category" "ProductCategory" NOT NULL,
+    "unit_name" VARCHAR(30) NOT NULL,
+    "purchase_price" DECIMAL(12,2) NOT NULL,
+    "minimum_stock" DECIMAL(12,3) NOT NULL,
+    "current_stock" DECIMAL(12,3) NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "products_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "product_suppliers" (
+    "product_id" UUID NOT NULL,
+    "supplier_id" UUID NOT NULL,
+    "supplier_product_code" VARCHAR(60),
+    "is_preferred" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "pk_product_suppliers" PRIMARY KEY ("product_id","supplier_id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_entries" (
+    "id" UUID NOT NULL,
+    "supplier_id" UUID NOT NULL,
+    "created_by_id" UUID NOT NULL,
+    "status" "StockEntryStatus" NOT NULL,
+    "ordered_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "received_at" TIMESTAMP(3),
+    "reference_number" VARCHAR(50),
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_entries_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_entry_items" (
+    "id" UUID NOT NULL,
+    "stock_entry_id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "inventory_lot_id" UUID,
+    "quantity" DECIMAL(12,3) NOT NULL,
+    "unit_cost" DECIMAL(12,2) NOT NULL,
+    "lot_number" VARCHAR(80),
+    "expiration_date" DATE,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_entry_items_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "inventory_lots" (
+    "id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "supplier_id" UUID,
+    "lot_number" VARCHAR(80) NOT NULL,
+    "expiration_date" DATE NOT NULL,
+    "received_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "initial_quantity" DECIMAL(12,3) NOT NULL,
+    "current_quantity" DECIMAL(12,3) NOT NULL DEFAULT 0,
+    "unit_cost" DECIMAL(12,2),
+    "last_movement_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "inventory_lots_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_outputs" (
+    "id" UUID NOT NULL,
+    "created_by_id" UUID NOT NULL,
+    "reason" "StockOutputReason" NOT NULL,
+    "occurred_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_outputs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_output_items" (
+    "id" UUID NOT NULL,
+    "stock_output_id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "quantity" DECIMAL(12,3) NOT NULL,
+    "unit_cost" DECIMAL(12,2),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_output_items_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "service_types" (
+    "id" UUID NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "kind" "ServiceKind" NOT NULL,
+    "unit_name" VARCHAR(30) NOT NULL DEFAULT 'unit',
+    "description" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "service_types_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "service_type_supplies" (
+    "id" UUID NOT NULL,
+    "service_type_id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "quantity_per_unit" DECIMAL(12,3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "service_type_supplies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "service_records" (
+    "id" UUID NOT NULL,
+    "service_type_id" UUID NOT NULL,
+    "created_by_id" UUID NOT NULL,
+    "kind" "ServiceKind" NOT NULL,
+    "status" "ServiceStatus" NOT NULL,
+    "quantity" DECIMAL(12,3) NOT NULL,
+    "service_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "delivered_at" TIMESTAMP(3),
+    "external_vendor_name" VARCHAR(120),
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "service_records_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "service_consumptions" (
+    "id" UUID NOT NULL,
+    "service_record_id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "quantity" DECIMAL(12,3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "service_consumptions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_movements" (
+    "id" UUID NOT NULL,
+    "product_id" UUID NOT NULL,
+    "inventory_lot_id" UUID,
+    "stock_entry_item_id" UUID,
+    "stock_output_item_id" UUID,
+    "service_consumption_id" UUID,
+    "performed_by_id" UUID,
+    "movement_type" "StockMovementType" NOT NULL,
+    "direction" "StockMovementDirection" NOT NULL,
+    "quantity" DECIMAL(12,3) NOT NULL,
+    "product_stock_after" DECIMAL(12,3) NOT NULL,
+    "lot_stock_after" DECIMAL(12,3),
+    "occurred_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_movements_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_users_dni" ON "users"("dni");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_users_username" ON "users"("username");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_users_email" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "idx_users_deleted_name" ON "users"("deleted_at", "last_name", "first_name");
+
+-- CreateIndex
+CREATE INDEX "idx_users_role_deleted" ON "users"("role", "deleted_at");
+
+-- CreateIndex
+CREATE INDEX "idx_users_active_name" ON "users"("is_active", "last_name", "first_name");
+
+-- CreateIndex
+CREATE INDEX "idx_users_role_active" ON "users"("role", "is_active");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_suppliers_ruc" ON "suppliers"("ruc");
+
+-- CreateIndex
+CREATE INDEX "idx_suppliers_deleted_name" ON "suppliers"("deleted_at", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_suppliers_active_name" ON "suppliers"("is_active", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_products_sku" ON "products"("sku");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_products_barcode" ON "products"("barcode");
+
+-- CreateIndex
+CREATE INDEX "idx_products_deleted_name" ON "products"("deleted_at", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_products_category_deleted_name" ON "products"("category", "deleted_at", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_products_deleted_current_stock" ON "products"("deleted_at", "current_stock");
+
+-- CreateIndex
+CREATE INDEX "idx_products_active_name" ON "products"("is_active", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_products_category_active_name" ON "products"("category", "is_active", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_products_active_current_stock" ON "products"("is_active", "current_stock");
+
+-- CreateIndex
+CREATE INDEX "idx_product_suppliers_product_deleted" ON "product_suppliers"("product_id", "deleted_at");
+
+-- CreateIndex
+CREATE INDEX "idx_product_suppliers_supplier_deleted_preferred" ON "product_suppliers"("supplier_id", "deleted_at", "is_preferred");
+
+-- CreateIndex
+CREATE INDEX "idx_product_suppliers_supplier_preferred" ON "product_suppliers"("supplier_id", "is_preferred");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entries_supplier_ordered_at" ON "stock_entries"("supplier_id", "ordered_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entries_status_ordered_at" ON "stock_entries"("status", "ordered_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entries_received_at" ON "stock_entries"("received_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entry_items_entry" ON "stock_entry_items"("stock_entry_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entry_items_product" ON "stock_entry_items"("product_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entry_items_inventory_lot" ON "stock_entry_items"("inventory_lot_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_entry_items_product_expiration" ON "stock_entry_items"("product_id", "expiration_date");
+
+-- CreateIndex
+CREATE INDEX "idx_inventory_lots_product_expiration" ON "inventory_lots"("product_id", "expiration_date");
+
+-- CreateIndex
+CREATE INDEX "idx_inventory_lots_expiration_quantity" ON "inventory_lots"("expiration_date", "current_quantity");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_inventory_lots_product_lot_expiration" ON "inventory_lots"("product_id", "lot_number", "expiration_date");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_outputs_reason_occurred_at" ON "stock_outputs"("reason", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_outputs_created_by_occurred_at" ON "stock_outputs"("created_by_id", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_output_items_output" ON "stock_output_items"("stock_output_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_output_items_product" ON "stock_output_items"("product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_service_types_name" ON "service_types"("name");
+
+-- CreateIndex
+CREATE INDEX "idx_service_types_deleted_name" ON "service_types"("deleted_at", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_service_types_kind_deleted" ON "service_types"("kind", "deleted_at");
+
+-- CreateIndex
+CREATE INDEX "idx_service_types_active_name" ON "service_types"("is_active", "name");
+
+-- CreateIndex
+CREATE INDEX "idx_service_types_kind_active" ON "service_types"("kind", "is_active");
+
+-- CreateIndex
+CREATE INDEX "idx_service_type_supplies_type_deleted" ON "service_type_supplies"("service_type_id", "deleted_at");
+
+-- CreateIndex
+CREATE INDEX "idx_service_type_supplies_product_deleted" ON "service_type_supplies"("product_id", "deleted_at");
+
+-- CreateIndex
+CREATE INDEX "idx_service_type_supplies_product" ON "service_type_supplies"("product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_service_type_supplies_service_product" ON "service_type_supplies"("service_type_id", "product_id");
+
+-- CreateIndex
+CREATE INDEX "idx_service_records_service_date" ON "service_records"("service_date");
+
+-- CreateIndex
+CREATE INDEX "idx_service_records_created_by_date" ON "service_records"("created_by_id", "service_date");
+
+-- CreateIndex
+CREATE INDEX "idx_service_records_kind_status_date" ON "service_records"("kind", "status", "service_date");
+
+-- CreateIndex
+CREATE INDEX "idx_service_records_type_date" ON "service_records"("service_type_id", "service_date");
+
+-- CreateIndex
+CREATE INDEX "idx_service_consumptions_product" ON "service_consumptions"("product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_service_consumptions_service_product" ON "service_consumptions"("service_record_id", "product_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uq_stock_movements_stock_entry_item" ON "stock_movements"("stock_entry_item_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_occurred_at" ON "stock_movements"("occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_product_occurred_at" ON "stock_movements"("product_id", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_type_occurred_at" ON "stock_movements"("movement_type", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_direction_occurred_at" ON "stock_movements"("direction", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_performed_by_occurred_at" ON "stock_movements"("performed_by_id", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_lot_occurred_at" ON "stock_movements"("inventory_lot_id", "occurred_at");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_output_item" ON "stock_movements"("stock_output_item_id");
+
+-- CreateIndex
+CREATE INDEX "idx_stock_movements_service_consumption" ON "stock_movements"("service_consumption_id");
+
+-- AddForeignKey
+ALTER TABLE "product_suppliers" ADD CONSTRAINT "product_suppliers_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "product_suppliers" ADD CONSTRAINT "product_suppliers_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_entries" ADD CONSTRAINT "stock_entries_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_entries" ADD CONSTRAINT "stock_entries_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_entry_items" ADD CONSTRAINT "stock_entry_items_stock_entry_id_fkey" FOREIGN KEY ("stock_entry_id") REFERENCES "stock_entries"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_entry_items" ADD CONSTRAINT "stock_entry_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_entry_items" ADD CONSTRAINT "stock_entry_items_inventory_lot_id_fkey" FOREIGN KEY ("inventory_lot_id") REFERENCES "inventory_lots"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "inventory_lots" ADD CONSTRAINT "inventory_lots_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "inventory_lots" ADD CONSTRAINT "inventory_lots_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_outputs" ADD CONSTRAINT "stock_outputs_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_output_items" ADD CONSTRAINT "stock_output_items_stock_output_id_fkey" FOREIGN KEY ("stock_output_id") REFERENCES "stock_outputs"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_output_items" ADD CONSTRAINT "stock_output_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_type_supplies" ADD CONSTRAINT "service_type_supplies_service_type_id_fkey" FOREIGN KEY ("service_type_id") REFERENCES "service_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_type_supplies" ADD CONSTRAINT "service_type_supplies_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_records" ADD CONSTRAINT "service_records_service_type_id_fkey" FOREIGN KEY ("service_type_id") REFERENCES "service_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_records" ADD CONSTRAINT "service_records_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_consumptions" ADD CONSTRAINT "service_consumptions_service_record_id_fkey" FOREIGN KEY ("service_record_id") REFERENCES "service_records"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_consumptions" ADD CONSTRAINT "service_consumptions_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_inventory_lot_id_fkey" FOREIGN KEY ("inventory_lot_id") REFERENCES "inventory_lots"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_stock_entry_item_id_fkey" FOREIGN KEY ("stock_entry_item_id") REFERENCES "stock_entry_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_stock_output_item_id_fkey" FOREIGN KEY ("stock_output_item_id") REFERENCES "stock_output_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_service_consumption_id_fkey" FOREIGN KEY ("service_consumption_id") REFERENCES "service_consumptions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_movements" ADD CONSTRAINT "stock_movements_performed_by_id_fkey" FOREIGN KEY ("performed_by_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Business rules: checks, triggers, stock movements and history guards
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -842,3 +1346,4 @@ CREATE TRIGGER trg_stock_movements_prevent_mutation
 BEFORE UPDATE OR DELETE ON stock_movements
 FOR EACH ROW
 EXECUTE FUNCTION prevent_stock_movement_mutation();
+
