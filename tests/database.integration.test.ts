@@ -89,6 +89,14 @@ test("RF-01/RF-06: required fields, non-negative values, and unique supplier tax
   );
 
   await expectDbError(
+    db.schemaClient.query(`
+      INSERT INTO products (id, name, category, unit_name, purchase_price, sale_price, minimum_stock, current_stock, is_active, created_at, updated_at)
+      VALUES ('${randomUUID()}', 'Negative Sale Price Product', 'SCHOOL_SUPPLIES', 'unit', 1, -1, 1, 0, true, now(), now())
+    `),
+    "chk_products_sale_price_non_negative",
+  );
+
+  await expectDbError(
     createSupplier({
       name: "Supplier Beta",
       ruc: "20111111111",
@@ -97,7 +105,7 @@ test("RF-01/RF-06: required fields, non-negative values, and unique supplier tax
   );
 });
 
-test("RF-03/RF-09/RF-10/RF-11: snacks require lot metadata and only RECEIVED entries increase stock", async () => {
+test("RF-03/RF-09/RF-10/RF-11: snacks use simple inventory and only RECEIVED entries increase stock", async () => {
   const user = await createUser();
   const supplier = await createSupplier();
   const snack = await createProduct({
@@ -141,26 +149,12 @@ test("RF-03/RF-09/RF-10/RF-11: snacks require lot metadata and only RECEIVED ent
     },
   });
 
-  await expectDbError(
-    prisma.stockEntryItem.create({
-      data: {
-        stockEntryId: orderedEntry.id,
-        productId: snack.id,
-        quantity: 12,
-        unitCost: 1.4,
-      },
-    }),
-    "Snack stock entry items require lot_number",
-  );
-
   await prisma.stockEntryItem.create({
     data: {
       stockEntryId: orderedEntry.id,
       productId: snack.id,
       quantity: 12,
       unitCost: 1.4,
-      lotNumber: "LOT-001",
-      expirationDate: new Date("2026-04-28T00:00:00.000Z"),
     },
   });
 
@@ -182,17 +176,13 @@ test("RF-03/RF-09/RF-10/RF-11: snacks require lot metadata and only RECEIVED ent
   });
   assert.equal(decimalToNumber(afterReceive.currentStock), 12);
 
-  const inventoryLot = await prisma.inventoryLot.findFirstOrThrow({
-    where: { productId: snack.id, lotNumber: "LOT-001" },
-  });
-  assert.equal(decimalToNumber(inventoryLot.currentQuantity), 12);
-
   const movements = await prisma.stockMovement.findMany({
     where: { productId: snack.id },
   });
   assert.equal(movements.length, 1);
   assert.equal(movements[0]?.movementType, "PURCHASE_ENTRY");
   assert.equal(movements[0]?.direction, "IN");
+  assert.equal(decimalToNumber(movements[0]!.unitCost), 1.4);
 });
 
 test("RF-12/RF-16: received entries, output items, and historical rows become immutable", async () => {
@@ -315,7 +305,7 @@ test("Improvement: a product can have multiple suppliers but only one preferred 
   );
 });
 
-test("RF-13/RF-14/RF-15: outputs deduct stock, prevent overselling, and consume snack lots using FEFO", async () => {
+test("RF-13/RF-14/RF-15: outputs deduct snack stock without lot tracking and prevent overselling", async () => {
   const user = await createUser();
   const supplier = await createSupplier();
   const snack = await createProduct({
@@ -337,15 +327,11 @@ test("RF-13/RF-14/RF-15: outputs deduct stock, prevent overselling, and consume 
             productId: snack.id,
             quantity: 5,
             unitCost: 0.8,
-            lotNumber: "EARLY",
-            expirationDate: new Date("2026-04-24T00:00:00.000Z"),
           },
           {
             productId: snack.id,
             quantity: 8,
             unitCost: 0.8,
-            lotNumber: "LATE",
-            expirationDate: new Date("2026-05-01T00:00:00.000Z"),
           },
         ],
       },
@@ -372,13 +358,6 @@ test("RF-13/RF-14/RF-15: outputs deduct stock, prevent overselling, and consume 
     where: { id: snack.id },
   });
   assert.equal(decimalToNumber(productAfterSale.currentStock), 7);
-
-  const lots = await prisma.inventoryLot.findMany({
-    where: { productId: snack.id },
-    orderBy: { expirationDate: "asc" },
-  });
-  assert.equal(decimalToNumber(lots[0]!.currentQuantity), 0);
-  assert.equal(decimalToNumber(lots[1]!.currentQuantity), 7);
 
   await expectDbError(
     prisma.stockOutput.create({
@@ -408,11 +387,218 @@ test("RF-13/RF-14/RF-15: outputs deduct stock, prevent overselling, and consume 
     orderBy: { occurredAt: "asc" },
   });
 
-  assert.equal(outputMovements.length, 2);
+  assert.equal(outputMovements.length, 1);
+  assert.equal(decimalToNumber(outputMovements[0]!.quantity), 6);
+  assert.equal(decimalToNumber(outputMovements[0]!.unitCost), 0.8);
+});
+
+test("Cost reporting: purchase cost changes update average cost and freeze output movement cost", async () => {
+  const user = await createUser();
+  const supplier = await createSupplier();
+  const product = await createProduct({
+    name: "Costed Product",
+    purchasePrice: 10,
+    minimumStock: 1,
+  });
+
+  await prisma.stockEntry.create({
+    data: {
+      supplierId: supplier.id,
+      createdById: user.id,
+      status: "RECEIVED",
+      orderedAt: new Date("2026-04-22T07:00:00.000Z"),
+      receivedAt: new Date("2026-04-22T07:10:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 10,
+            unitCost: 10,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.stockEntry.create({
+    data: {
+      supplierId: supplier.id,
+      createdById: user.id,
+      status: "RECEIVED",
+      orderedAt: new Date("2026-04-23T07:00:00.000Z"),
+      receivedAt: new Date("2026-04-23T07:10:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 10,
+            unitCost: 12,
+          },
+        ],
+      },
+    },
+  });
+
+  const productAfterPurchases = await prisma.product.findUniqueOrThrow({
+    where: { id: product.id },
+  });
+  assert.equal(decimalToNumber(productAfterPurchases.currentStock), 20);
+  assert.equal(decimalToNumber(productAfterPurchases.purchasePrice), 11);
+
+  const output = await prisma.stockOutput.create({
+    data: {
+      createdById: user.id,
+      reason: "SALE",
+      occurredAt: new Date("2026-04-23T12:00:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 5,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  assert.equal(decimalToNumber(output.items[0]!.unitCost), 11);
+
+  const outputMovement = await prisma.stockMovement.findFirstOrThrow({
+    where: {
+      productId: product.id,
+      stockOutputItemId: output.items[0]!.id,
+    },
+  });
+  assert.equal(decimalToNumber(outputMovement.quantity), 5);
+  assert.equal(decimalToNumber(outputMovement.unitCost), 11);
+
+  const entryMovements = await prisma.stockMovement.findMany({
+    where: { productId: product.id, direction: "IN" },
+    orderBy: { occurredAt: "asc" },
+  });
   assert.deepEqual(
-    outputMovements.map((movement) => decimalToNumber(movement.quantity)),
-    [5, 1],
+    entryMovements.map((movement) => decimalToNumber(movement.unitCost)),
+    [10, 12],
   );
+});
+
+test("Sale pricing: suggested product price is snapshotted and real sale price can differ", async () => {
+  const user = await createUser();
+  const supplier = await createSupplier();
+  const product = await createProduct({
+    name: "Bulk Notebook",
+    purchasePrice: 1.2,
+    salePrice: 3,
+    minimumStock: 1,
+  });
+
+  await prisma.stockEntry.create({
+    data: {
+      supplierId: supplier.id,
+      createdById: user.id,
+      status: "RECEIVED",
+      orderedAt: new Date("2026-04-24T08:00:00.000Z"),
+      receivedAt: new Date("2026-04-24T08:10:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 25,
+            unitCost: 1.2,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { salePrice: 3.2 },
+  });
+
+  const discountedOutput = await prisma.stockOutput.create({
+    data: {
+      createdById: user.id,
+      reason: "SALE",
+      occurredAt: new Date("2026-04-24T09:00:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 20,
+            unitSalePrice: 2.8,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  assert.equal(
+    decimalToNumber(discountedOutput.items[0]!.suggestedUnitSalePrice),
+    3.2,
+  );
+  assert.equal(decimalToNumber(discountedOutput.items[0]!.unitSalePrice), 2.8);
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { salePrice: 3.5 },
+  });
+
+  const regularOutput = await prisma.stockOutput.create({
+    data: {
+      createdById: user.id,
+      reason: "SALE",
+      occurredAt: new Date("2026-04-24T10:00:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 2,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  assert.equal(
+    decimalToNumber(regularOutput.items[0]!.suggestedUnitSalePrice),
+    3.5,
+  );
+  assert.equal(decimalToNumber(regularOutput.items[0]!.unitSalePrice), 3.5);
+
+  const firstSaleAfterPriceChange = await prisma.stockOutputItem.findUniqueOrThrow({
+    where: { id: discountedOutput.items[0]!.id },
+  });
+  assert.equal(
+    decimalToNumber(firstSaleAfterPriceChange.suggestedUnitSalePrice),
+    3.2,
+  );
+  assert.equal(decimalToNumber(firstSaleAfterPriceChange.unitSalePrice), 2.8);
+
+  const wasteOutput = await prisma.stockOutput.create({
+    data: {
+      createdById: user.id,
+      reason: "WASTE",
+      occurredAt: new Date("2026-04-24T11:00:00.000Z"),
+      items: {
+        create: [
+          {
+            productId: product.id,
+            quantity: 1,
+            suggestedUnitSalePrice: 9,
+            unitSalePrice: 9,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  assert.equal(wasteOutput.items[0]!.suggestedUnitSalePrice, null);
+  assert.equal(wasteOutput.items[0]!.unitSalePrice, null);
 });
 
 test("RF-21/RF-22/RF-23/RF-24: in-house services consume supplies automatically and outsourced services only track status", async () => {
@@ -540,7 +726,7 @@ test("RF-21/RF-22/RF-23/RF-24: in-house services consume supplies automatically 
   );
 });
 
-test("RF-17/RF-18/RF-19/RF-20/RF-25/RF-26/RF-27/RF-28/RF-29: stock, alerts, movements, and services remain queryable for reports", async () => {
+test("RF-17/RF-18/RF-20/RF-25/RF-26/RF-28/RF-29: stock, alerts, movements, and services remain queryable for reports", async () => {
   const user = await createUser();
   const supplier = await createSupplier();
   const snack = await createProduct({
@@ -567,8 +753,6 @@ test("RF-17/RF-18/RF-19/RF-20/RF-25/RF-26/RF-27/RF-28/RF-29: stock, alerts, move
             productId: snack.id,
             quantity: 6,
             unitCost: 1,
-            lotNumber: "REPORT-LOT",
-            expirationDate: new Date("2026-04-26T00:00:00.000Z"),
           },
           {
             productId: schoolSupply.id,
@@ -640,18 +824,6 @@ test("RF-17/RF-18/RF-19/RF-20/RF-25/RF-26/RF-27/RF-28/RF-29: stock, alerts, move
     lowStockRows.rows.map((row) => row.id),
     [schoolSupply.id, snack.id].sort(),
   );
-
-  const expiringLots = await db.schemaClient.query<{
-    product_id: string;
-  }>(
-    `
-      SELECT product_id
-      FROM inventory_lots
-      WHERE expiration_date <= DATE '2026-04-29'
-      ORDER BY product_id
-    `,
-  );
-  assert.deepEqual(expiringLots.rows.map((row) => row.product_id), [snack.id]);
 
   const snackMovements = await prisma.stockMovement.findMany({
     where: {

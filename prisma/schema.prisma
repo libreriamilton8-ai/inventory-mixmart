@@ -101,7 +101,6 @@ model Supplier {
 
   productSuppliers ProductSupplier[]
   stockEntries     StockEntry[]
-  inventoryLots    InventoryLot[]
 
   @@index([deletedAt, name], map: "idx_suppliers_deleted_name")
   @@index([isActive, name], map: "idx_suppliers_active_name")
@@ -117,6 +116,7 @@ model Product {
   category      ProductCategory
   unitName      String          @map("unit_name") @db.VarChar(30)
   purchasePrice Decimal         @map("purchase_price") @db.Decimal(12, 2)
+  salePrice     Decimal?        @map("sale_price") @db.Decimal(12, 2)
   minimumStock  Decimal         @map("minimum_stock") @db.Decimal(12, 3)
   currentStock  Decimal         @default(0) @map("current_stock") @db.Decimal(12, 3)
 
@@ -128,7 +128,6 @@ model Product {
   productSuppliers    ProductSupplier[]
   stockEntryItems     StockEntryItem[]
   stockOutputItems    StockOutputItem[]
-  inventoryLots       InventoryLot[]
   stockMovements      StockMovement[]
   serviceTypeSupplies ServiceTypeSupply[]
   serviceConsumptions ServiceConsumption[]
@@ -186,54 +185,22 @@ model StockEntry {
 }
 
 model StockEntryItem {
-  id             String    @id @default(uuid(7)) @db.Uuid
-  stockEntryId   String    @map("stock_entry_id") @db.Uuid
-  productId      String    @map("product_id") @db.Uuid
-  inventoryLotId String?   @map("inventory_lot_id") @db.Uuid
-  quantity       Decimal   @db.Decimal(12, 3)
-  unitCost       Decimal   @map("unit_cost") @db.Decimal(12, 2)
-  lotNumber      String?   @map("lot_number") @db.VarChar(80)
-  expirationDate DateTime? @map("expiration_date") @db.Date
+  id           String  @id @default(uuid(7)) @db.Uuid
+  stockEntryId String  @map("stock_entry_id") @db.Uuid
+  productId    String  @map("product_id") @db.Uuid
+  quantity     Decimal @db.Decimal(12, 3)
+  unitCost     Decimal @map("unit_cost") @db.Decimal(12, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   stockEntry     StockEntry      @relation(fields: [stockEntryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLot   InventoryLot?   @relation(fields: [inventoryLotId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockMovements StockMovement[]
 
   @@index([stockEntryId], map: "idx_stock_entry_items_entry")
   @@index([productId], map: "idx_stock_entry_items_product")
-  @@index([inventoryLotId], map: "idx_stock_entry_items_inventory_lot")
-  @@index([productId, expirationDate], map: "idx_stock_entry_items_product_expiration")
   @@map("stock_entry_items")
-}
-
-model InventoryLot {
-  id              String    @id @default(uuid(7)) @db.Uuid
-  productId       String    @map("product_id") @db.Uuid
-  supplierId      String?   @map("supplier_id") @db.Uuid
-  lotNumber       String    @map("lot_number") @db.VarChar(80)
-  expirationDate  DateTime  @map("expiration_date") @db.Date
-  receivedAt      DateTime  @default(now()) @map("received_at")
-  initialQuantity Decimal   @map("initial_quantity") @db.Decimal(12, 3)
-  currentQuantity Decimal   @default(0) @map("current_quantity") @db.Decimal(12, 3)
-  unitCost        Decimal?  @map("unit_cost") @db.Decimal(12, 2)
-  lastMovementAt  DateTime? @map("last_movement_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  product         Product          @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  supplier        Supplier?        @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  stockEntryItems StockEntryItem[]
-  stockMovements  StockMovement[]
-
-  @@unique([productId, lotNumber, expirationDate], map: "uq_inventory_lots_product_lot_expiration")
-  @@index([productId, expirationDate], map: "idx_inventory_lots_product_expiration")
-  @@index([expirationDate, currentQuantity], map: "idx_inventory_lots_expiration_quantity")
-  @@map("inventory_lots")
 }
 
 model StockOutput {
@@ -255,11 +222,13 @@ model StockOutput {
 }
 
 model StockOutputItem {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  stockOutputId String   @map("stock_output_id") @db.Uuid
-  productId     String   @map("product_id") @db.Uuid
-  quantity      Decimal  @db.Decimal(12, 3)
-  unitCost      Decimal? @map("unit_cost") @db.Decimal(12, 2)
+  id                     String   @id @default(uuid(7)) @db.Uuid
+  stockOutputId          String   @map("stock_output_id") @db.Uuid
+  productId              String   @map("product_id") @db.Uuid
+  quantity               Decimal  @db.Decimal(12, 3)
+  unitCost               Decimal? @map("unit_cost") @db.Decimal(12, 2)
+  suggestedUnitSalePrice Decimal? @map("suggested_unit_sale_price") @db.Decimal(12, 2)
+  unitSalePrice          Decimal? @map("unit_sale_price") @db.Decimal(12, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -362,7 +331,6 @@ model ServiceConsumption {
 model StockMovement {
   id                   String                 @id @default(uuid(7)) @db.Uuid
   productId            String                 @map("product_id") @db.Uuid
-  inventoryLotId       String?                @map("inventory_lot_id") @db.Uuid
   stockEntryItemId     String?                @unique(map: "uq_stock_movements_stock_entry_item") @map("stock_entry_item_id") @db.Uuid
   stockOutputItemId    String?                @map("stock_output_item_id") @db.Uuid
   serviceConsumptionId String?                @map("service_consumption_id") @db.Uuid
@@ -370,14 +338,13 @@ model StockMovement {
   movementType         StockMovementType      @map("movement_type")
   direction            StockMovementDirection
   quantity             Decimal                @db.Decimal(12, 3)
+  unitCost             Decimal?               @map("unit_cost") @db.Decimal(12, 2)
   productStockAfter    Decimal                @map("product_stock_after") @db.Decimal(12, 3)
-  lotStockAfter        Decimal?               @map("lot_stock_after") @db.Decimal(12, 3)
   occurredAt           DateTime               @default(now()) @map("occurred_at")
   notes                String?                @db.Text
   createdAt            DateTime               @default(now()) @map("created_at")
 
   product            Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  inventoryLot       InventoryLot?       @relation(fields: [inventoryLotId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockEntryItem     StockEntryItem?     @relation(fields: [stockEntryItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockOutputItem    StockOutputItem?    @relation(fields: [stockOutputItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   serviceConsumption ServiceConsumption? @relation(fields: [serviceConsumptionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -388,7 +355,6 @@ model StockMovement {
   @@index([movementType, occurredAt], map: "idx_stock_movements_type_occurred_at")
   @@index([direction, occurredAt], map: "idx_stock_movements_direction_occurred_at")
   @@index([performedById, occurredAt], map: "idx_stock_movements_performed_by_occurred_at")
-  @@index([inventoryLotId, occurredAt], map: "idx_stock_movements_lot_occurred_at")
   @@index([stockOutputItemId], map: "idx_stock_movements_output_item")
   @@index([serviceConsumptionId], map: "idx_stock_movements_service_consumption")
   @@map("stock_movements")

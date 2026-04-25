@@ -57,7 +57,6 @@ export const ModelName = {
   ProductSupplier: 'ProductSupplier',
   StockEntry: 'StockEntry',
   StockEntryItem: 'StockEntryItem',
-  InventoryLot: 'InventoryLot',
   StockOutput: 'StockOutput',
   StockOutputItem: 'StockOutputItem',
   ServiceType: 'ServiceType',
@@ -130,6 +129,7 @@ export const ProductScalarFieldEnum = {
   category: 'category',
   unitName: 'unitName',
   purchasePrice: 'purchasePrice',
+  salePrice: 'salePrice',
   minimumStock: 'minimumStock',
   currentStock: 'currentStock',
   isActive: 'isActive',
@@ -174,34 +174,13 @@ export const StockEntryItemScalarFieldEnum = {
   id: 'id',
   stockEntryId: 'stockEntryId',
   productId: 'productId',
-  inventoryLotId: 'inventoryLotId',
   quantity: 'quantity',
   unitCost: 'unitCost',
-  lotNumber: 'lotNumber',
-  expirationDate: 'expirationDate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type StockEntryItemScalarFieldEnum = (typeof StockEntryItemScalarFieldEnum)[keyof typeof StockEntryItemScalarFieldEnum]
-
-
-export const InventoryLotScalarFieldEnum = {
-  id: 'id',
-  productId: 'productId',
-  supplierId: 'supplierId',
-  lotNumber: 'lotNumber',
-  expirationDate: 'expirationDate',
-  receivedAt: 'receivedAt',
-  initialQuantity: 'initialQuantity',
-  currentQuantity: 'currentQuantity',
-  unitCost: 'unitCost',
-  lastMovementAt: 'lastMovementAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type InventoryLotScalarFieldEnum = (typeof InventoryLotScalarFieldEnum)[keyof typeof InventoryLotScalarFieldEnum]
 
 
 export const StockOutputScalarFieldEnum = {
@@ -223,6 +202,8 @@ export const StockOutputItemScalarFieldEnum = {
   productId: 'productId',
   quantity: 'quantity',
   unitCost: 'unitCost',
+  suggestedUnitSalePrice: 'suggestedUnitSalePrice',
+  unitSalePrice: 'unitSalePrice',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -291,7 +272,6 @@ export type ServiceConsumptionScalarFieldEnum = (typeof ServiceConsumptionScalar
 export const StockMovementScalarFieldEnum = {
   id: 'id',
   productId: 'productId',
-  inventoryLotId: 'inventoryLotId',
   stockEntryItemId: 'stockEntryItemId',
   stockOutputItemId: 'stockOutputItemId',
   serviceConsumptionId: 'serviceConsumptionId',
@@ -299,8 +279,8 @@ export const StockMovementScalarFieldEnum = {
   movementType: 'movementType',
   direction: 'direction',
   quantity: 'quantity',
+  unitCost: 'unitCost',
   productStockAfter: 'productStockAfter',
-  lotStockAfter: 'lotStockAfter',
   occurredAt: 'occurredAt',
   notes: 'notes',
   createdAt: 'createdAt'

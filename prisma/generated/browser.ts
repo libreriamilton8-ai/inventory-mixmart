@@ -48,11 +48,6 @@ export type StockEntry = Prisma.StockEntryModel
  */
 export type StockEntryItem = Prisma.StockEntryItemModel
 /**
- * Model InventoryLot
- * 
- */
-export type InventoryLot = Prisma.InventoryLotModel
-/**
  * Model StockOutput
  * 
  */

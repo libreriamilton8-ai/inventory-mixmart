@@ -18,7 +18,6 @@ const TABLES = [
   "service_types",
   "stock_output_items",
   "stock_outputs",
-  "inventory_lots",
   "stock_entry_items",
   "stock_entries",
   "product_suppliers",

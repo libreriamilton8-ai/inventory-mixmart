@@ -1,4 +1,4 @@
 interface:
-  display_name: "Business Rules Guardrails"
-  short_description: "Domain invariants for Prisma and PostgreSQL"
-  default_prompt: "Use $business-rules-domain-guardrails to turn requirements into enforceable business rules."
+  display_name: "Mixmart Domain Guardrails"
+  short_description: "Inventory, stock, cost, service, and role invariants"
+  default_prompt: "Use $business-rules-domain-guardrails to enforce Mixmart inventory rules in Prisma and PostgreSQL."

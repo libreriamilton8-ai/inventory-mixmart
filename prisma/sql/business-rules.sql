@@ -14,6 +14,16 @@ BEGIN
     SELECT 1
     FROM pg_constraint c
     JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE c.conname = 'chk_products_sale_price_non_negative'
+      AND n.nspname = current_schema()
+  ) THEN
+    EXECUTE 'ALTER TABLE products ADD CONSTRAINT chk_products_sale_price_non_negative CHECK (sale_price IS NULL OR sale_price >= 0)';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
     WHERE c.conname = 'chk_products_minimum_stock_non_negative'
       AND n.nspname = current_schema()
   ) THEN
@@ -67,40 +77,40 @@ BEGIN
     SELECT 1
     FROM pg_constraint c
     JOIN pg_namespace n ON n.oid = c.connamespace
-    WHERE c.conname = 'chk_inventory_lots_initial_quantity_positive'
-      AND n.nspname = current_schema()
-  ) THEN
-    EXECUTE 'ALTER TABLE inventory_lots ADD CONSTRAINT chk_inventory_lots_initial_quantity_positive CHECK (initial_quantity > 0)';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint c
-    JOIN pg_namespace n ON n.oid = c.connamespace
-    WHERE c.conname = 'chk_inventory_lots_current_quantity_non_negative'
-      AND n.nspname = current_schema()
-  ) THEN
-    EXECUTE 'ALTER TABLE inventory_lots ADD CONSTRAINT chk_inventory_lots_current_quantity_non_negative CHECK (current_quantity >= 0)';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint c
-    JOIN pg_namespace n ON n.oid = c.connamespace
-    WHERE c.conname = 'chk_inventory_lots_unit_cost_non_negative'
-      AND n.nspname = current_schema()
-  ) THEN
-    EXECUTE 'ALTER TABLE inventory_lots ADD CONSTRAINT chk_inventory_lots_unit_cost_non_negative CHECK (unit_cost IS NULL OR unit_cost >= 0)';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint c
-    JOIN pg_namespace n ON n.oid = c.connamespace
     WHERE c.conname = 'chk_stock_output_items_quantity_positive'
       AND n.nspname = current_schema()
   ) THEN
     EXECUTE 'ALTER TABLE stock_output_items ADD CONSTRAINT chk_stock_output_items_quantity_positive CHECK (quantity > 0)';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE c.conname = 'chk_stock_output_items_unit_cost_non_negative'
+      AND n.nspname = current_schema()
+  ) THEN
+    EXECUTE 'ALTER TABLE stock_output_items ADD CONSTRAINT chk_stock_output_items_unit_cost_non_negative CHECK (unit_cost IS NULL OR unit_cost >= 0)';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE c.conname = 'chk_stock_output_items_suggested_sale_price_non_negative'
+      AND n.nspname = current_schema()
+  ) THEN
+    EXECUTE 'ALTER TABLE stock_output_items ADD CONSTRAINT chk_stock_output_items_suggested_sale_price_non_negative CHECK (suggested_unit_sale_price IS NULL OR suggested_unit_sale_price >= 0)';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE c.conname = 'chk_stock_output_items_unit_sale_price_non_negative'
+      AND n.nspname = current_schema()
+  ) THEN
+    EXECUTE 'ALTER TABLE stock_output_items ADD CONSTRAINT chk_stock_output_items_unit_sale_price_non_negative CHECK (unit_sale_price IS NULL OR unit_sale_price >= 0)';
   END IF;
 
   IF NOT EXISTS (
@@ -155,6 +165,16 @@ BEGIN
   ) THEN
     EXECUTE 'ALTER TABLE stock_movements ADD CONSTRAINT chk_stock_movements_quantity_positive CHECK (quantity > 0)';
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE c.conname = 'chk_stock_movements_unit_cost_non_negative'
+      AND n.nspname = current_schema()
+  ) THEN
+    EXECUTE 'ALTER TABLE stock_movements ADD CONSTRAINT chk_stock_movements_unit_cost_non_negative CHECK (unit_cost IS NULL OR unit_cost >= 0)';
+  END IF;
 END
 $$;
 
@@ -208,32 +228,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION validate_snack_stock_entry_item()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_category text;
-BEGIN
-  SELECT category::text
-    INTO v_category
-  FROM products
-  WHERE id = NEW.product_id;
-
-  IF v_category = 'SNACKS' THEN
-    IF NEW.lot_number IS NULL OR btrim(NEW.lot_number) = '' THEN
-      RAISE EXCEPTION 'Snack stock entry items require lot_number';
-    END IF;
-
-    IF NEW.expiration_date IS NULL THEN
-      RAISE EXCEPTION 'Snack stock entry items require expiration_date';
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION guard_received_stock_entry_item_mutations()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -257,9 +251,7 @@ BEGIN
     IF NEW.stock_entry_id IS DISTINCT FROM OLD.stock_entry_id
        OR NEW.product_id IS DISTINCT FROM OLD.product_id
        OR NEW.quantity IS DISTINCT FROM OLD.quantity
-       OR NEW.unit_cost IS DISTINCT FROM OLD.unit_cost
-       OR NEW.lot_number IS DISTINCT FROM OLD.lot_number
-       OR NEW.expiration_date IS DISTINCT FROM OLD.expiration_date THEN
+       OR NEW.unit_cost IS DISTINCT FROM OLD.unit_cost THEN
       RAISE EXCEPTION 'Received stock entry items are immutable';
     END IF;
   END IF;
@@ -274,41 +266,25 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_product_id uuid;
-  v_supplier_id uuid;
   v_user_id uuid;
-  v_category text;
   v_quantity numeric;
   v_unit_cost numeric;
-  v_lot_number text;
-  v_expiration_date date;
   v_occurred_at timestamp;
-  v_inventory_lot_id uuid;
   v_product_stock_after numeric;
-  v_lot_stock_after numeric;
 BEGIN
   SELECT sei.product_id,
-         se.supplier_id,
          se.created_by_id,
-         p.category::text,
          sei.quantity,
          sei.unit_cost,
-         sei.lot_number,
-         sei.expiration_date,
          COALESCE(se.received_at, se.created_at)
     INTO v_product_id,
-         v_supplier_id,
          v_user_id,
-         v_category,
          v_quantity,
          v_unit_cost,
-         v_lot_number,
-         v_expiration_date,
          v_occurred_at
   FROM stock_entry_items sei
   JOIN stock_entries se
     ON se.id = sei.stock_entry_id
-  JOIN products p
-    ON p.id = sei.product_id
   WHERE sei.id = p_stock_entry_item_id
     AND se.status::text = 'RECEIVED';
 
@@ -324,58 +300,13 @@ BEGIN
     RETURN;
   END IF;
 
-  IF v_category = 'SNACKS' THEN
-    IF v_lot_number IS NULL OR btrim(v_lot_number) = '' OR v_expiration_date IS NULL THEN
-      RAISE EXCEPTION 'Snack stock entries require lot_number and expiration_date before reception';
-    END IF;
-
-    INSERT INTO inventory_lots (
-      id,
-      product_id,
-      supplier_id,
-      lot_number,
-      expiration_date,
-      received_at,
-      initial_quantity,
-      current_quantity,
-      unit_cost,
-      last_movement_at,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      gen_random_uuid(),
-      v_product_id,
-      v_supplier_id,
-      v_lot_number,
-      v_expiration_date,
-      v_occurred_at,
-      v_quantity,
-      v_quantity,
-      v_unit_cost,
-      v_occurred_at,
-      now(),
-      now()
-    )
-    ON CONFLICT (product_id, lot_number, expiration_date)
-    DO UPDATE SET
-      supplier_id = COALESCE(inventory_lots.supplier_id, EXCLUDED.supplier_id),
-      initial_quantity = inventory_lots.initial_quantity + EXCLUDED.initial_quantity,
-      current_quantity = inventory_lots.current_quantity + EXCLUDED.current_quantity,
-      unit_cost = EXCLUDED.unit_cost,
-      last_movement_at = EXCLUDED.last_movement_at,
-      updated_at = now()
-    RETURNING id, current_quantity
-      INTO v_inventory_lot_id, v_lot_stock_after;
-
-    UPDATE stock_entry_items
-    SET inventory_lot_id = v_inventory_lot_id
-    WHERE id = p_stock_entry_item_id
-      AND inventory_lot_id IS DISTINCT FROM v_inventory_lot_id;
-  END IF;
-
   UPDATE products
-  SET current_stock = current_stock + v_quantity,
+  SET purchase_price = CASE
+        WHEN current_stock + v_quantity > 0 THEN
+          round(((current_stock * purchase_price) + (v_quantity * v_unit_cost)) / (current_stock + v_quantity), 2)
+        ELSE v_unit_cost
+      END,
+      current_stock = current_stock + v_quantity,
       updated_at = now()
   WHERE id = v_product_id
   RETURNING current_stock
@@ -384,28 +315,26 @@ BEGIN
   INSERT INTO stock_movements (
     id,
     product_id,
-    inventory_lot_id,
     stock_entry_item_id,
     performed_by_id,
     movement_type,
     direction,
     quantity,
+    unit_cost,
     product_stock_after,
-    lot_stock_after,
     occurred_at,
     notes
   )
   VALUES (
     gen_random_uuid(),
     v_product_id,
-    v_inventory_lot_id,
     p_stock_entry_item_id,
     v_user_id,
     'PURCHASE_ENTRY'::"StockMovementType",
     'IN'::"StockMovementDirection",
     v_quantity,
+    v_unit_cost,
     v_product_stock_after,
-    v_lot_stock_after,
     v_occurred_at,
     'Auto-applied when stock entry reached RECEIVED status'
   );
@@ -454,127 +383,102 @@ CREATE OR REPLACE FUNCTION consume_product_stock(
   p_service_consumption_id uuid,
   p_performed_by_id uuid,
   p_occurred_at timestamp,
+  p_unit_cost numeric,
   p_notes text
 )
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_category text;
   v_product_stock_after numeric;
-  v_remaining numeric := p_quantity;
-  v_lot record;
-  v_taken numeric;
-  v_lot_stock_after numeric;
+  v_unit_cost numeric;
 BEGIN
   UPDATE products
   SET current_stock = current_stock - p_quantity,
       updated_at = now()
   WHERE id = p_product_id
     AND current_stock >= p_quantity
-  RETURNING category::text, current_stock
-    INTO v_category, v_product_stock_after;
+  RETURNING current_stock, COALESCE(p_unit_cost, purchase_price)
+    INTO v_product_stock_after, v_unit_cost;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Insufficient stock for product %', p_product_id;
   END IF;
 
-  IF v_category = 'SNACKS' THEN
-    FOR v_lot IN
-      SELECT id, current_quantity
-      FROM inventory_lots
-      WHERE product_id = p_product_id
-        AND current_quantity > 0
-      ORDER BY expiration_date, received_at, created_at, id
-      FOR UPDATE
-    LOOP
-      EXIT WHEN v_remaining <= 0;
+  INSERT INTO stock_movements (
+    id,
+    product_id,
+    stock_output_item_id,
+    service_consumption_id,
+    performed_by_id,
+    movement_type,
+    direction,
+    quantity,
+    unit_cost,
+    product_stock_after,
+    occurred_at,
+    notes
+  )
+  VALUES (
+    gen_random_uuid(),
+    p_product_id,
+    p_stock_output_item_id,
+    p_service_consumption_id,
+    p_performed_by_id,
+    CASE p_movement_type
+      WHEN 'SALE' THEN 'SALE'::"StockMovementType"
+      WHEN 'WASTE' THEN 'WASTE'::"StockMovementType"
+      WHEN 'INTERNAL_USE' THEN 'INTERNAL_USE'::"StockMovementType"
+      ELSE 'SERVICE_CONSUMPTION'::"StockMovementType"
+    END,
+    'OUT'::"StockMovementDirection",
+    p_quantity,
+    v_unit_cost,
+    v_product_stock_after,
+    COALESCE(p_occurred_at, now()),
+    p_notes
+  );
+END;
+$$;
 
-      v_taken := LEAST(v_remaining, v_lot.current_quantity);
+CREATE OR REPLACE FUNCTION prepare_stock_output_item()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_purchase_price numeric;
+  v_sale_price numeric;
+  v_reason text;
+BEGIN
+  SELECT p.purchase_price,
+         p.sale_price,
+         so.reason::text
+    INTO v_purchase_price,
+         v_sale_price,
+         v_reason
+  FROM products p
+  JOIN stock_outputs so
+    ON so.id = NEW.stock_output_id
+  WHERE p.id = NEW.product_id;
 
-      UPDATE inventory_lots
-      SET current_quantity = current_quantity - v_taken,
-          last_movement_at = COALESCE(p_occurred_at, now()),
-          updated_at = now()
-      WHERE id = v_lot.id
-      RETURNING current_quantity
-        INTO v_lot_stock_after;
+  IF NEW.unit_cost IS NULL THEN
+    NEW.unit_cost := v_purchase_price;
+  END IF;
 
-      INSERT INTO stock_movements (
-        id,
-        product_id,
-        inventory_lot_id,
-        stock_output_item_id,
-        service_consumption_id,
-        performed_by_id,
-        movement_type,
-        direction,
-        quantity,
-        product_stock_after,
-        lot_stock_after,
-        occurred_at,
-        notes
-      )
-      VALUES (
-        gen_random_uuid(),
-        p_product_id,
-        v_lot.id,
-        p_stock_output_item_id,
-        p_service_consumption_id,
-        p_performed_by_id,
-        CASE p_movement_type
-          WHEN 'SALE' THEN 'SALE'::"StockMovementType"
-          WHEN 'WASTE' THEN 'WASTE'::"StockMovementType"
-          WHEN 'INTERNAL_USE' THEN 'INTERNAL_USE'::"StockMovementType"
-          ELSE 'SERVICE_CONSUMPTION'::"StockMovementType"
-        END,
-        'OUT'::"StockMovementDirection",
-        v_taken,
-        v_product_stock_after,
-        v_lot_stock_after,
-        COALESCE(p_occurred_at, now()),
-        p_notes
-      );
+  IF v_reason = 'SALE' THEN
+    IF NEW.suggested_unit_sale_price IS NULL THEN
+      NEW.suggested_unit_sale_price := v_sale_price;
+    END IF;
 
-      v_remaining := v_remaining - v_taken;
-    END LOOP;
-
-    IF v_remaining > 0 THEN
-      RAISE EXCEPTION 'Lot stock is inconsistent for snack product %', p_product_id;
+    IF NEW.unit_sale_price IS NULL THEN
+      NEW.unit_sale_price := NEW.suggested_unit_sale_price;
     END IF;
   ELSE
-    INSERT INTO stock_movements (
-      id,
-      product_id,
-      stock_output_item_id,
-      service_consumption_id,
-      performed_by_id,
-      movement_type,
-      direction,
-      quantity,
-      product_stock_after,
-      occurred_at,
-      notes
-    )
-    VALUES (
-      gen_random_uuid(),
-      p_product_id,
-      p_stock_output_item_id,
-      p_service_consumption_id,
-      p_performed_by_id,
-      CASE p_movement_type
-        WHEN 'SALE' THEN 'SALE'::"StockMovementType"
-        WHEN 'WASTE' THEN 'WASTE'::"StockMovementType"
-        WHEN 'INTERNAL_USE' THEN 'INTERNAL_USE'::"StockMovementType"
-        ELSE 'SERVICE_CONSUMPTION'::"StockMovementType"
-      END,
-      'OUT'::"StockMovementDirection",
-      p_quantity,
-      v_product_stock_after,
-      COALESCE(p_occurred_at, now()),
-      p_notes
-    );
+    NEW.suggested_unit_sale_price := NULL;
+    NEW.unit_sale_price := NULL;
   END IF;
+
+  RETURN NEW;
 END;
 $$;
 
@@ -609,6 +513,7 @@ BEGIN
     NULL,
     v_user_id,
     v_occurred_at,
+    NEW.unit_cost,
     'Auto-applied from stock output item'
   );
 
@@ -740,12 +645,15 @@ BEGIN
     NEW.id,
     v_user_id,
     v_service_date,
+    NULL,
     'Auto-applied from service consumption'
   );
 
   RETURN NEW;
 END;
 $$;
+
+DROP FUNCTION IF EXISTS consume_product_stock(uuid, numeric, text, uuid, uuid, uuid, timestamp, text);
 
 DROP TRIGGER IF EXISTS trg_stock_entries_prepare ON stock_entries;
 CREATE TRIGGER trg_stock_entries_prepare
@@ -766,10 +674,7 @@ FOR EACH ROW
 EXECUTE FUNCTION prevent_history_delete();
 
 DROP TRIGGER IF EXISTS trg_stock_entry_items_validate_snacks ON stock_entry_items;
-CREATE TRIGGER trg_stock_entry_items_validate_snacks
-BEFORE INSERT OR UPDATE ON stock_entry_items
-FOR EACH ROW
-EXECUTE FUNCTION validate_snack_stock_entry_item();
+DROP FUNCTION IF EXISTS validate_snack_stock_entry_item();
 
 DROP TRIGGER IF EXISTS trg_stock_entry_items_guard_received_mutations ON stock_entry_items;
 CREATE TRIGGER trg_stock_entry_items_guard_received_mutations
@@ -794,6 +699,12 @@ CREATE TRIGGER trg_stock_output_items_prevent_mutation
 BEFORE UPDATE OR DELETE ON stock_output_items
 FOR EACH ROW
 EXECUTE FUNCTION prevent_stock_output_item_mutation();
+
+DROP TRIGGER IF EXISTS trg_stock_output_items_prepare ON stock_output_items;
+CREATE TRIGGER trg_stock_output_items_prepare
+BEFORE INSERT ON stock_output_items
+FOR EACH ROW
+EXECUTE FUNCTION prepare_stock_output_item();
 
 DROP TRIGGER IF EXISTS trg_stock_output_items_apply_after_insert ON stock_output_items;
 CREATE TRIGGER trg_stock_output_items_apply_after_insert

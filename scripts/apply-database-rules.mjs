@@ -12,9 +12,15 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required to apply database rules.");
 }
 
+const connectionUrl = new URL(connectionString);
 const schema = (() => {
-  const url = new URL(connectionString);
-  return url.searchParams.get("schema") ?? "public";
+  return connectionUrl.searchParams.get("schema") ?? "public";
+})();
+
+const sslMode = (() => {
+  const mode = connectionUrl.searchParams.get("sslmode");
+  connectionUrl.searchParams.delete("sslmode");
+  return mode;
 })();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +28,12 @@ const sqlPath = path.join(__dirname, "..", "prisma", "sql", "business-rules.sql"
 const sql = await readFile(sqlPath, "utf8");
 const quotedSchema = `"${schema.replace(/"/g, "\"\"")}"`;
 
-const client = new Client({ connectionString });
+const client = new Client({
+  connectionString: connectionUrl.toString(),
+  ...(sslMode && sslMode !== "disable"
+    ? { ssl: { rejectUnauthorized: sslMode === "verify-full" } }
+    : {}),
+});
 
 try {
   await client.connect();
