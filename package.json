@@ -15,14 +15,22 @@
     "test:db": "tsx --test tests/database.integration.test.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
+    "@tanstack/react-table": "^8.21.3",
+    "clsx": "^2.1.1",
     "dotenv": "^17.4.1",
+    "lucide-react": "^1.11.0",
     "next": "16.2.2",
     "next-auth": "^4.24.14",
     "pg": "^8.20.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.73.1",
+    "recharts": "^3.8.0",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
