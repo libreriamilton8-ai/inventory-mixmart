@@ -97,6 +97,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
 
             <LoginForm callbackUrl={callbackUrl} initialError={initialError} />
+            <footer className="mt-8 border-t border-border/60 pt-4 text-center text-xs text-muted-foreground">
+              © {new Date().getFullYear()} El Colorado. Todos los derechos
+              reservados.
+            </footer>
           </div>
         </div>
       </section>

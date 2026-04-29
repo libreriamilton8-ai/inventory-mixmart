@@ -1,5 +1,5 @@
-import { Pencil, Plus, RotateCcw, Search } from "lucide-react";
-import { Fragment, Suspense } from "react";
+import { Pencil, Plus, RotateCcw, Search } from 'lucide-react';
+import { Fragment, Suspense } from 'react';
 
 import {
   EmptyState,
@@ -11,17 +11,17 @@ import {
   SectionHeader,
   StatusBadge,
   SubmitButton,
-} from "@/components/shared";
-import { FormModal } from "@/components/ui/modal";
+} from '@/components/shared';
+import { FormModal } from '@/components/ui/modal';
 import {
   decimalToNumber,
   formatCurrency,
   formatDecimal,
   productCategoryLabels,
-} from "@/lib/format";
-import { requireActiveUser } from "@/lib/auth";
-import { canManageCatalog } from "@/lib/permissions";
-import prisma from "@/lib/prisma";
+} from '@/lib/format';
+import { requireActiveUser } from '@/lib/auth';
+import { canManageCatalog } from '@/lib/permissions';
+import prisma from '@/lib/prisma';
 import {
   createProduct,
   deactivateProduct,
@@ -29,19 +29,19 @@ import {
   restoreProduct,
   softDeleteProduct,
   updateProduct,
-} from "@/server/actions";
-import type { ProductCategory } from "../../../../prisma/generated/client";
+} from '@/server/actions';
+import type { ProductCategory } from '../../../../prisma/generated/client';
 
 type ProductsPageProps = {
   searchParams: Promise<{
     q?: string;
     category?: ProductCategory;
-    status?: "active" | "inactive" | "deleted";
+    status?: 'active' | 'inactive' | 'deleted';
     success?: string;
   }>;
 };
 
-const categories: ProductCategory[] = ["SCHOOL_SUPPLIES", "BAZAAR", "SNACKS"];
+const categories: ProductCategory[] = ['SCHOOL_SUPPLIES', 'BAZAAR', 'SNACKS'];
 
 export default function ProductsPage({ searchParams }: ProductsPageProps) {
   return (
@@ -54,32 +54,32 @@ export default function ProductsPage({ searchParams }: ProductsPageProps) {
 }
 
 async function ProductsContent({ searchParams }: ProductsPageProps) {
-  const user = await requireActiveUser("/products");
+  const user = await requireActiveUser('/products');
   const params = await searchParams;
   const canManage = canManageCatalog(user.role);
-  const q = params.q?.trim() ?? "";
+  const q = params.q?.trim() ?? '';
   const category = params.category;
-  const status = params.status ?? "active";
+  const status = params.status ?? 'active';
 
   const products = await prisma.product.findMany({
     where: {
       ...(q
         ? {
             OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { sku: { contains: q, mode: "insensitive" } },
-              { barcode: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: 'insensitive' } },
+              { sku: { contains: q, mode: 'insensitive' } },
+              { barcode: { contains: q, mode: 'insensitive' } },
             ],
           }
         : {}),
       ...(category ? { category } : {}),
-      ...(status === "inactive"
+      ...(status === 'inactive'
         ? { isActive: false }
-        : status === "deleted"
+        : status === 'deleted'
           ? { deletedAt: { not: null } }
           : { isActive: true }),
     },
-    orderBy: [{ isActive: "desc" }, { name: "asc" }],
+    orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     take: 100,
   });
 
@@ -108,19 +108,37 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">Producto guardado correctamente.</FlashMessage>
+        <FlashMessage type="success">
+          Producto guardado correctamente.
+        </FlashMessage>
       ) : null}
 
       <Section className="mb-5">
         <SectionHeader title="Filtros" />
-        <form className="grid gap-3 p-4 md:grid-cols-[1fr_180px_160px_auto]" action="/products">
+        <form
+          className="grid gap-3 p-4 md:grid-cols-[1fr_180px_160px_auto]"
+          action="/products"
+        >
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Buscar</span>
-            <input className="input" defaultValue={q} name="q" placeholder="Nombre, SKU o codigo" />
+            <span className="text-xs font-medium text-muted-foreground">
+              Buscar
+            </span>
+            <input
+              className="input"
+              defaultValue={q}
+              name="q"
+              placeholder="Nombre, SKU o codigo"
+            />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Categoria</span>
-            <select className="input" defaultValue={category ?? ""} name="category">
+            <span className="text-xs font-medium text-muted-foreground">
+              Categoria
+            </span>
+            <select
+              className="input"
+              defaultValue={category ?? ''}
+              name="category"
+            >
               <option value="">Todas</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
@@ -130,7 +148,9 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Estado</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Estado
+            </span>
             <select className="input" defaultValue={status} name="status">
               <option value="active">Activos</option>
               <option value="inactive">Inactivos</option>
@@ -147,7 +167,7 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
       </Section>
 
       <Section>
-        <SectionHeader title="Lista de productos" />
+        {/* <SectionHeader title="Lista de productos" /> */}
         {products.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
@@ -157,8 +177,12 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                   <th className="px-4 py-3">Categoria</th>
                   <th className="px-4 py-3">Stock</th>
                   <th className="px-4 py-3">Minimo</th>
-                  {user.role === "ADMIN" ? <th className="px-4 py-3">Costo</th> : null}
-                  {user.role === "ADMIN" ? <th className="px-4 py-3">Venta sug.</th> : null}
+                  {user.role === 'ADMIN' ? (
+                    <th className="px-4 py-3">Costo</th>
+                  ) : null}
+                  {user.role === 'ADMIN' ? (
+                    <th className="px-4 py-3">Venta sug.</th>
+                  ) : null}
                   <th className="px-4 py-3">Estado</th>
                   {canManage ? <th className="px-4 py-3">Acciones</th> : null}
                 </tr>
@@ -168,7 +192,9 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                   <Fragment key={product.id}>
                     <tr>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-foreground">{product.name}</p>
+                        <p className="font-medium text-foreground">
+                          {product.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {product.sku || product.barcode || product.unitName}
                         </p>
@@ -181,13 +207,19 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                           {formatDecimal(product.currentStock, 3)}
                         </StatusBadge>
                       </td>
-                      <td className="px-4 py-3">{formatDecimal(product.minimumStock, 3)}</td>
-                      {user.role === "ADMIN" ? (
-                        <td className="px-4 py-3">{formatCurrency(product.purchasePrice)}</td>
-                      ) : null}
-                      {user.role === "ADMIN" ? (
+                      <td className="px-4 py-3">
+                        {formatDecimal(product.minimumStock, 3)}
+                      </td>
+                      {user.role === 'ADMIN' ? (
                         <td className="px-4 py-3">
-                          {product.salePrice ? formatCurrency(product.salePrice) : "-"}
+                          {formatCurrency(product.purchasePrice)}
+                        </td>
+                      ) : null}
+                      {user.role === 'ADMIN' ? (
+                        <td className="px-4 py-3">
+                          {product.salePrice
+                            ? formatCurrency(product.salePrice)
+                            : '-'}
                         </td>
                       ) : null}
                       <td className="px-4 py-3">
@@ -204,9 +236,16 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                           <div className="flex flex-wrap items-center gap-2">
                             {product.deletedAt ? (
                               <form action={restoreProduct}>
-                                <input name="id" type="hidden" value={product.id} />
+                                <input
+                                  name="id"
+                                  type="hidden"
+                                  value={product.id}
+                                />
                                 <SubmitButton className="btn btn-secondary">
-                                  <RotateCcw aria-hidden="true" className="h-4 w-4" />
+                                  <RotateCcw
+                                    aria-hidden="true"
+                                    className="h-4 w-4"
+                                  />
                                   Restaurar
                                 </SubmitButton>
                               </form>
@@ -219,7 +258,10 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                                   triggerClassName="btn-soft"
                                   trigger={
                                     <>
-                                      <Pencil aria-hidden="true" className="h-4 w-4" />
+                                      <Pencil
+                                        aria-hidden="true"
+                                        className="h-4 w-4"
+                                      />
                                       Editar
                                     </>
                                   }
@@ -233,13 +275,23 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
                                       : reactivateProduct
                                   }
                                 >
-                                  <input name="id" type="hidden" value={product.id} />
+                                  <input
+                                    name="id"
+                                    type="hidden"
+                                    value={product.id}
+                                  />
                                   <SubmitButton className="btn btn-ghost border border-border">
-                                    {product.isActive ? "Desactivar" : "Activar"}
+                                    {product.isActive
+                                      ? 'Desactivar'
+                                      : 'Activar'}
                                   </SubmitButton>
                                 </form>
                                 <form action={softDeleteProduct}>
-                                  <input name="id" type="hidden" value={product.id} />
+                                  <input
+                                    name="id"
+                                    type="hidden"
+                                    value={product.id}
+                                  />
                                   <SubmitButton className="btn btn-ghost border border-border">
                                     Ocultar
                                   </SubmitButton>
@@ -256,7 +308,10 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
             </table>
           </div>
         ) : (
-          <EmptyState title="Sin productos" description="No hay productos con esos filtros." />
+          <EmptyState
+            title="Sin productos"
+            description="No hay productos con esos filtros."
+          />
         )}
       </Section>
     </>
@@ -268,14 +323,14 @@ function stockTone(product: { currentStock: unknown; minimumStock: unknown }) {
   const minimum = decimalToNumber(product.minimumStock as never);
 
   if (current <= 0) {
-    return "error";
+    return 'error';
   }
 
   if (current <= minimum) {
-    return "warning";
+    return 'warning';
   }
 
-  return "success";
+  return 'success';
 }
 
 function ProductFormBody({
@@ -301,14 +356,29 @@ function ProductFormBody({
       action={isEdit ? updateProduct : createProduct}
       className="grid gap-4 p-6 md:grid-cols-3"
     >
-      {isEdit && product ? <input name="id" type="hidden" value={product.id} /> : null}
+      {isEdit && product ? (
+        <input name="id" type="hidden" value={product.id} />
+      ) : null}
       <label className="space-y-1.5 md:col-span-2">
-        <span className="text-xs font-semibold text-muted-foreground">Nombre</span>
-        <input className="input" defaultValue={product?.name} name="name" required />
+        <span className="text-xs font-semibold text-muted-foreground">
+          Nombre
+        </span>
+        <input
+          className="input"
+          defaultValue={product?.name}
+          name="name"
+          required
+        />
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Categoria</span>
-        <select className="input" defaultValue={product?.category ?? "SCHOOL_SUPPLIES"} name="category">
+        <span className="text-xs font-semibold text-muted-foreground">
+          Categoria
+        </span>
+        <select
+          className="input"
+          defaultValue={product?.category ?? 'SCHOOL_SUPPLIES'}
+          name="category"
+        >
           {categories.map((item) => (
             <option key={item} value={item}>
               {productCategoryLabels[item]}
@@ -318,21 +388,36 @@ function ProductFormBody({
       </label>
       <label className="space-y-1.5">
         <span className="text-xs font-semibold text-muted-foreground">SKU</span>
-        <input className="input" defaultValue={product?.sku ?? ""} name="sku" />
+        <input className="input" defaultValue={product?.sku ?? ''} name="sku" />
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Codigo barras</span>
-        <input className="input" defaultValue={product?.barcode ?? ""} name="barcode" />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Unidad</span>
-        <input className="input" defaultValue={product?.unitName ?? "unidad"} name="unitName" required />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Costo ref.</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          Codigo barras
+        </span>
         <input
           className="input"
-          defaultValue={product?.purchasePrice?.toString() ?? "0"}
+          defaultValue={product?.barcode ?? ''}
+          name="barcode"
+        />
+      </label>
+      <label className="space-y-1.5">
+        <span className="text-xs font-semibold text-muted-foreground">
+          Unidad
+        </span>
+        <input
+          className="input"
+          defaultValue={product?.unitName ?? 'unidad'}
+          name="unitName"
+          required
+        />
+      </label>
+      <label className="space-y-1.5">
+        <span className="text-xs font-semibold text-muted-foreground">
+          Costo ref.
+        </span>
+        <input
+          className="input"
+          defaultValue={product?.purchasePrice?.toString() ?? '0'}
           min="0"
           name="purchasePrice"
           required
@@ -341,10 +426,12 @@ function ProductFormBody({
         />
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Venta sugerida</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          Venta sugerida
+        </span>
         <input
           className="input"
-          defaultValue={product?.salePrice?.toString() ?? ""}
+          defaultValue={product?.salePrice?.toString() ?? ''}
           min="0"
           name="salePrice"
           step="0.01"
@@ -352,10 +439,12 @@ function ProductFormBody({
         />
       </label>
       <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">Stock minimo</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          Stock minimo
+        </span>
         <input
           className="input"
-          defaultValue={product?.minimumStock?.toString() ?? "0"}
+          defaultValue={product?.minimumStock?.toString() ?? '0'}
           min="0"
           name="minimumStock"
           required
@@ -364,17 +453,19 @@ function ProductFormBody({
         />
       </label>
       <label className="space-y-1.5 md:col-span-3">
-        <span className="text-xs font-semibold text-muted-foreground">Descripcion</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          Descripcion
+        </span>
         <textarea
           className="input min-h-24 py-2"
-          defaultValue={product?.description ?? ""}
+          defaultValue={product?.description ?? ''}
           name="description"
         />
       </label>
       <div className="flex justify-end md:col-span-3">
         <SubmitButton>
           <Plus aria-hidden="true" className="h-4 w-4" />
-          {isEdit ? "Guardar cambios" : "Crear producto"}
+          {isEdit ? 'Guardar cambios' : 'Crear producto'}
         </SubmitButton>
       </div>
     </form>

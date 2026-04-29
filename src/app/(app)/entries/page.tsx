@@ -186,7 +186,7 @@ async function EntriesContent({ searchParams }: EntriesPageProps) {
       ) : null}
 
       <Section>
-        <SectionHeader title="Entradas recientes" />
+        {/* <SectionHeader title="Entradas recientes" /> */}
         {entries.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">

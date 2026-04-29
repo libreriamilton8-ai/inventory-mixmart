@@ -1,14 +1,14 @@
-import type { ReactNode } from "react";
-import Link from "next/link";
-import { CircleHelp, Plus, UserRound } from "lucide-react";
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { CircleHelp, Plus, UserRound } from 'lucide-react';
 
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import {
   AppNavigation,
   AppTopBar,
   MobileNavigation,
-} from "@/components/layout/app-shell-client";
-import type { UserRole } from "../../../prisma/generated/client";
+} from '@/components/layout/app-shell-client';
+import type { UserRole } from '../../../prisma/generated/client';
 
 type AppShellUser = {
   firstName: string;
@@ -29,11 +29,9 @@ export function AppShell({ children, user }: AppShellProps) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-80 border-r border-border bg-surface-muted text-foreground lg:flex lg:flex-col">
         <div className="px-10 pb-8 pt-10">
           <p className="text-3xl font-semibold tracking-tight text-primary">
-            El Colorado
+            Inventario
           </p>
-          <p className="mt-2 text-lg text-muted-foreground">
-            Libreria y Bazar
-          </p>
+          <p className="mt-2 text-lg text-muted-foreground">Libreria y Bazar</p>
         </div>
 
         <div className="px-5">

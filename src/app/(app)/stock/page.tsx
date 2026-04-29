@@ -1,5 +1,5 @@
-import { Search } from "lucide-react";
-import { Suspense } from "react";
+import { Search } from 'lucide-react';
+import { Suspense } from 'react';
 
 import {
   EmptyState,
@@ -9,27 +9,27 @@ import {
   Section,
   SectionHeader,
   StatusBadge,
-} from "@/components/shared";
+} from '@/components/shared';
 import {
   decimalToNumber,
   formatDate,
   formatDecimal,
   movementTypeLabels,
   productCategoryLabels,
-} from "@/lib/format";
-import { requireActiveUser } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import type { ProductCategory } from "../../../../prisma/generated/client";
+} from '@/lib/format';
+import { requireActiveUser } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+import type { ProductCategory } from '../../../../prisma/generated/client';
 
 type StockPageProps = {
   searchParams: Promise<{
     q?: string;
     category?: ProductCategory;
-    status?: "all" | "low" | "out";
+    status?: 'all' | 'low' | 'out';
   }>;
 };
 
-const categories: ProductCategory[] = ["SCHOOL_SUPPLIES", "BAZAAR", "SNACKS"];
+const categories: ProductCategory[] = ['SCHOOL_SUPPLIES', 'BAZAAR', 'SNACKS'];
 
 export default function StockPage({ searchParams }: StockPageProps) {
   return (
@@ -46,25 +46,25 @@ export default function StockPage({ searchParams }: StockPageProps) {
 }
 
 async function StockContent({ searchParams }: StockPageProps) {
-  await requireActiveUser("/stock");
+  await requireActiveUser('/stock');
   const params = await searchParams;
-  const q = params.q?.trim() ?? "";
+  const q = params.q?.trim() ?? '';
   const category = params.category;
-  const status = params.status ?? "all";
+  const status = params.status ?? 'all';
 
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
-      ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
+      ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
       ...(category ? { category } : {}),
     },
     include: {
       stockMovements: {
-        orderBy: { occurredAt: "desc" },
+        orderBy: { occurredAt: 'desc' },
         take: 1,
       },
     },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
+    orderBy: [{ category: 'asc' }, { name: 'asc' }],
     take: 200,
   });
 
@@ -72,11 +72,11 @@ async function StockContent({ searchParams }: StockPageProps) {
     const current = decimalToNumber(product.currentStock);
     const minimum = decimalToNumber(product.minimumStock);
 
-    if (status === "out") {
+    if (status === 'out') {
       return current <= 0;
     }
 
-    if (status === "low") {
+    if (status === 'low') {
       return current <= minimum;
     }
 
@@ -87,14 +87,30 @@ async function StockContent({ searchParams }: StockPageProps) {
     <>
       <Section className="mb-5">
         <SectionHeader title="Filtros" />
-        <form className="grid gap-3 p-4 md:grid-cols-[1fr_180px_160px_auto]" action="/stock">
+        <form
+          className="grid gap-3 p-4 md:grid-cols-[1fr_180px_160px_auto]"
+          action="/stock"
+        >
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Buscar</span>
-            <input className="input" defaultValue={q} name="q" placeholder="Producto" />
+            <span className="text-xs font-medium text-muted-foreground">
+              Buscar
+            </span>
+            <input
+              className="input"
+              defaultValue={q}
+              name="q"
+              placeholder="Producto"
+            />
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Categoria</span>
-            <select className="input" defaultValue={category ?? ""} name="category">
+            <span className="text-xs font-medium text-muted-foreground">
+              Categoria
+            </span>
+            <select
+              className="input"
+              defaultValue={category ?? ''}
+              name="category"
+            >
               <option value="">Todas</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
@@ -104,7 +120,9 @@ async function StockContent({ searchParams }: StockPageProps) {
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Vista</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Vista
+            </span>
             <select className="input" defaultValue={status} name="status">
               <option value="all">Todo</option>
               <option value="low">Bajo stock</option>
@@ -121,7 +139,7 @@ async function StockContent({ searchParams }: StockPageProps) {
       </Section>
 
       <Section>
-        <SectionHeader title="Inventario actual" />
+        {/* <SectionHeader title="Inventario actual" /> */}
         {filteredProducts.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
@@ -161,17 +179,17 @@ async function StockContent({ searchParams }: StockPageProps) {
                         <StatusBadge
                           tone={
                             current <= 0
-                              ? "error"
+                              ? 'error'
                               : current <= minimum
-                                ? "warning"
-                                : "success"
+                                ? 'warning'
+                                : 'success'
                           }
                         >
                           {current <= 0
-                            ? "Sin stock"
+                            ? 'Sin stock'
                             : current <= minimum
-                              ? "Bajo"
-                              : "OK"}
+                              ? 'Bajo'
+                              : 'OK'}
                         </StatusBadge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
@@ -179,7 +197,7 @@ async function StockContent({ searchParams }: StockPageProps) {
                           ? `${movementTypeLabels[latestMovement.movementType]} - ${formatDate(
                               latestMovement.occurredAt,
                             )}`
-                          : "-"}
+                          : '-'}
                       </td>
                     </tr>
                   );
@@ -188,7 +206,10 @@ async function StockContent({ searchParams }: StockPageProps) {
             </table>
           </div>
         ) : (
-          <EmptyState title="Sin productos" description="No hay stock con esos filtros." />
+          <EmptyState
+            title="Sin productos"
+            description="No hay stock con esos filtros."
+          />
         )}
       </Section>
     </>

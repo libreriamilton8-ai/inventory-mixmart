@@ -139,7 +139,7 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
       </Section>
 
       <Section>
-        <SectionHeader title="Lista de proveedores" />
+        {/* <SectionHeader title="Lista de proveedores" /> */}
         {suppliers.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
