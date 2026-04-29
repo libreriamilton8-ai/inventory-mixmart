@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 
 import { SubmitButton } from "@/components/shared";
+import { Select } from "@/components/ui/select";
 import { productCategoryLabels } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { createStockOutput } from "@/server/actions";
@@ -130,7 +131,7 @@ export function OutputForm({ products }: OutputFormProps) {
         </div>
         <div className="overflow-x-auto">
           <table className="table-operational">
-            <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+            <thead className="table-operational-head">
               <tr>
                 <th className="w-12 px-3 py-2">#</th>
                 <th className="min-w-[280px] px-3 py-2">Producto</th>
@@ -147,7 +148,7 @@ export function OutputForm({ products }: OutputFormProps) {
                     {index + 1}
                   </td>
                   <td className="px-3 py-2">
-                    <select className="input" name="productId">
+                    <Select name="productId">
                       <option value="">Seleccionar producto</option>
                       {categories.map((category) => {
                         const categoryProducts = products.filter(
@@ -171,7 +172,7 @@ export function OutputForm({ products }: OutputFormProps) {
                           </optgroup>
                         ) : null;
                       })}
-                    </select>
+                    </Select>
                   </td>
                   <td className="px-3 py-2">
                     <input

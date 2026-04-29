@@ -10,6 +10,7 @@ import {
   SectionHeader,
   StatusBadge,
 } from "@/components/shared";
+import { Select } from "@/components/ui/select";
 import {
   decimalToNumber,
   formatCurrency,
@@ -374,36 +375,36 @@ function ReportsTables({
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Categoria</span>
-            <select className="input" defaultValue={category ?? ""} name="category">
+            <Select defaultValue={category ?? ""} name="category">
               <option value="">Todas</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
                   {productCategoryLabels[item]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Producto</span>
-            <select className="input" defaultValue={productId ?? ""} name="productId">
+            <Select defaultValue={productId ?? ""} name="productId">
               <option value="">Todos</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Proveedor</span>
-            <select className="input" defaultValue={supplierId ?? ""} name="supplierId">
+            <Select defaultValue={supplierId ?? ""} name="supplierId">
               <option value="">Todos</option>
               {suppliers.map((supplier) => (
                 <option key={supplier.id} value={supplier.id}>
                   {supplier.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <div className="flex items-end">
             <button className="btn btn-primary w-full" type="submit">
@@ -433,7 +434,7 @@ function ReportsTables({
           {movements.length ? (
             <div className="max-h-[520px] overflow-auto">
               <table className="table-operational">
-                <thead className="sticky top-0 bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="table-operational-head sticky top-0">
                   <tr>
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Producto</th>
@@ -484,7 +485,7 @@ function ReportsTables({
           {lowStock.length ? (
             <div className="max-h-[520px] overflow-auto">
               <table className="table-operational">
-                <thead className="sticky top-0 bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="table-operational-head sticky top-0">
                   <tr>
                     <th className="px-4 py-3">Producto</th>
                     <th className="px-4 py-3">Categoria</th>
@@ -530,7 +531,7 @@ function ReportsTables({
           {entries.length ? (
             <div className="max-h-[520px] overflow-auto">
               <table className="table-operational">
-                <thead className="sticky top-0 bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="table-operational-head sticky top-0">
                   <tr>
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Proveedor</th>
@@ -576,7 +577,7 @@ function ReportsTables({
           {outputs.length ? (
             <div className="max-h-[520px] overflow-auto">
               <table className="table-operational">
-                <thead className="sticky top-0 bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="table-operational-head sticky top-0">
                   <tr>
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Motivo</th>
@@ -628,7 +629,7 @@ function ReportsTables({
         {services.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Servicio</th>

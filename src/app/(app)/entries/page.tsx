@@ -7,11 +7,11 @@ import {
   OperationalPageSkeleton,
   PageHeader,
   Section,
-  SectionHeader,
   StatusBadge,
   SubmitButton,
 } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import {
   decimalToNumber,
   formatCurrency,
@@ -93,23 +93,23 @@ async function EntriesContent({ searchParams }: EntriesPageProps) {
                   <span className="text-xs font-semibold text-muted-foreground">
                     Proveedor
                   </span>
-                  <select className="input" name="supplierId" required>
+                  <Select name="supplierId" required>
                     <option value="">Seleccionar</option>
                     {suppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">
                     Estado
                   </span>
-                  <select className="input" name="status" defaultValue="ORDERED">
+                  <Select defaultValue="ORDERED" name="status">
                     <option value="ORDERED">Ordenada</option>
                     <option value="RECEIVED">Recibida</option>
-                  </select>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">
@@ -121,7 +121,7 @@ async function EntriesContent({ searchParams }: EntriesPageProps) {
 
               <div className="overflow-x-auto rounded-card border border-border">
                 <table className="table-operational">
-                  <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                  <thead className="table-operational-head">
                     <tr>
                       <th className="px-3 py-2">Producto</th>
                       <th className="px-3 py-2">Cantidad</th>
@@ -132,14 +132,14 @@ async function EntriesContent({ searchParams }: EntriesPageProps) {
                     {Array.from({ length: 6 }).map((_, index) => (
                       <tr key={index}>
                         <td className="px-3 py-2">
-                          <select className="input" name="productId">
+                          <Select name="productId">
                             <option value="">Seleccionar</option>
                             {products.map((product) => (
                               <option key={product.id} value={product.id}>
                                 {product.name} ({product.unitName})
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </td>
                         <td className="px-3 py-2">
                           <input
@@ -190,7 +190,7 @@ async function EntriesContent({ searchParams }: EntriesPageProps) {
         {entries.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Referencia</th>
                   <th className="px-4 py-3">Proveedor</th>

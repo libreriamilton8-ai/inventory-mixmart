@@ -133,7 +133,7 @@ async function OutputsContent({ searchParams }: OutputsPageProps) {
           {outputs.length ? (
             <div className="overflow-x-auto">
               <table className="table-operational">
-                <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="table-operational-head">
                   <tr>
                     <th className="px-4 py-3">Motivo</th>
                     <th className="px-4 py-3">Fecha</th>

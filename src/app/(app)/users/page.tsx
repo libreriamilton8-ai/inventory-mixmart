@@ -7,11 +7,11 @@ import {
   OperationalPageSkeleton,
   PageHeader,
   Section,
-  SectionHeader,
   StatusBadge,
   SubmitButton,
 } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
 import { formatDate, roleLabels } from '@/lib/format';
 import { requireRole } from '@/lib/auth';
 import prisma from '@/lib/prisma';
@@ -81,7 +81,7 @@ async function UsersContent({ searchParams }: UsersPageProps) {
         {users.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Usuario</th>
                   <th className="px-4 py-3">Contacto</th>
@@ -213,8 +213,7 @@ function UserFormBody({
       </label>
       <label className="space-y-1.5">
         <span className="text-xs font-semibold text-muted-foreground">Rol</span>
-        <select
-          className="input"
+        <Select
           defaultValue={user?.role ?? 'WORKER'}
           name="role"
         >
@@ -223,7 +222,7 @@ function UserFormBody({
               {roleLabels[role]}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="space-y-1.5">
         <span className="text-xs font-semibold text-muted-foreground">

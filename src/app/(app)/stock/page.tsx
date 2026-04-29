@@ -10,6 +10,7 @@ import {
   SectionHeader,
   StatusBadge,
 } from '@/components/shared';
+import { Select } from '@/components/ui/select';
 import {
   decimalToNumber,
   formatDate,
@@ -106,28 +107,24 @@ async function StockContent({ searchParams }: StockPageProps) {
             <span className="text-xs font-medium text-muted-foreground">
               Categoria
             </span>
-            <select
-              className="input"
-              defaultValue={category ?? ''}
-              name="category"
-            >
+            <Select defaultValue={category ?? ''} name="category">
               <option value="">Todas</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
                   {productCategoryLabels[item]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">
               Vista
             </span>
-            <select className="input" defaultValue={status} name="status">
+            <Select defaultValue={status} name="status">
               <option value="all">Todo</option>
               <option value="low">Bajo stock</option>
               <option value="out">Sin stock</option>
-            </select>
+            </Select>
           </label>
           <div className="flex items-end">
             <button className="btn btn-primary w-full" type="submit">
@@ -143,7 +140,7 @@ async function StockContent({ searchParams }: StockPageProps) {
         {filteredProducts.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3">Categoria</th>

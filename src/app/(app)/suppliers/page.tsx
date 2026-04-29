@@ -12,6 +12,7 @@ import {
   SubmitButton,
 } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import { decimalToNumber, formatCurrency, formatDateOnly } from "@/lib/format";
 import { requireActiveUser } from "@/lib/auth";
 import { canManageCatalog } from "@/lib/permissions";
@@ -123,11 +124,11 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Estado</span>
-            <select className="input" defaultValue={status} name="status">
+            <Select defaultValue={status} name="status">
               <option value="active">Activos</option>
               <option value="inactive">Inactivos</option>
               {canManage ? <option value="deleted">Eliminados</option> : null}
-            </select>
+            </Select>
           </label>
           <div className="flex items-end">
             <button className="btn btn-primary w-full" type="submit">
@@ -143,7 +144,7 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
         {suppliers.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Proveedor</th>
                   <th className="px-4 py-3">Contacto</th>

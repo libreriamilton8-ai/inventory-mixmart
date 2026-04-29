@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Boxes,
+  ChevronRight,
   Home,
   Package,
   PackagePlus,
@@ -16,6 +17,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
 
+import { roleLabels } from "@/lib/format";
 import { canAccessPath } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "../../../prisma/generated/client";
@@ -47,6 +49,59 @@ const navigationGroups = [
       { href: "/reports", label: "Reportes", icon: BarChart3 },
       { href: "/users", label: "Usuarios", icon: Users },
     ],
+  },
+] as const;
+
+const routeDescriptions = [
+  {
+    href: "/stock",
+    title: "Stock",
+    description: "Disponibilidad actual y ultima actividad por producto.",
+  },
+  {
+    href: "/entries",
+    title: "Entradas",
+    description:
+      "Ordenes y compras recibidas. Recibir una orden actualiza el stock una sola vez.",
+  },
+  {
+    href: "/outputs",
+    title: "Salidas",
+    description:
+      "Ventas, mermas y uso interno con validacion de stock en el servidor.",
+  },
+  {
+    href: "/services",
+    title: "Servicios",
+    description:
+      "Servicios internos con consumo de insumos y trabajos tercerizados.",
+  },
+  {
+    href: "/products",
+    title: "Productos",
+    description: "Catalogo, precios de referencia y stock actual por producto.",
+  },
+  {
+    href: "/suppliers",
+    title: "Proveedores",
+    description: "Datos de contacto, estado y compras recientes.",
+  },
+  {
+    href: "/reports",
+    title: "Reportes",
+    description:
+      "Analisis administrativo con datos historicos congelados en entradas, salidas y movimientos.",
+  },
+  {
+    href: "/users",
+    title: "Usuarios",
+    description: "Gestion administrativa de cuentas internas y roles.",
+  },
+  {
+    href: "/profile",
+    title: "Mi perfil",
+    description:
+      "Actualiza tus datos visibles y la imagen que te identifica dentro del sistema.",
   },
 ] as const;
 
@@ -117,40 +172,63 @@ function getGreeting(role: UserRole) {
 
 export function AppTopBar({ user }: { user: AppTopBarUser }) {
   const pathname = usePathname();
-  const visibleItems = getVisibleGroups(user.role).flatMap((group) => group.items);
   const onDashboard = isActive(pathname, "/dashboard");
   const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  const fullName = `${user.firstName} ${user.lastName}`;
+  const currentRoute =
+    routeDescriptions.find((route) => isActive(pathname, route.href)) ?? null;
 
   const heading = onDashboard
     ? `${getGreeting(user.role)}, ${user.firstName}`
-    : pathname.startsWith("/profile")
-      ? "Mi perfil"
-      : visibleItems.find((item) => isActive(pathname, item.href))?.label ??
-        "El Colorado";
+    : currentRoute?.title ?? "El Colorado";
+  const description = onDashboard
+    ? user.role === "ADMIN"
+      ? "Resumen financiero, movimientos recientes y alertas para toda la tienda."
+      : "Resumen operativo, movimientos recientes y alertas para tu jornada."
+    : currentRoute?.description ?? "Libreria y Bazar";
 
   return (
-    <header className="sticky top-0 z-20 bg-background/85 px-4 pt-7 pb-4 backdrop-blur supports-backdrop-filter:bg-background/75 lg:px-9">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight text-foreground">
-          {heading}
-        </h1>
+    <header className="sticky top-0 z-20 border-b border-border/80 bg-background/92 px-4 pt-6 pb-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:px-9">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight text-foreground">
+            {heading}
+          </h1>
+          <p className="mt-1 max-w-3xl text-[14px] leading-6 text-foreground/72">
+            {description}
+          </p>
+        </div>
         <Link
-          aria-label={`${user.firstName} ${user.lastName} - Mi perfil`}
-          className="group flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary text-[13px] font-semibold text-primary-foreground transition hover:bg-primary-hover"
+          aria-label={`${fullName} - Mi perfil`}
+          className="group flex max-w-full items-center gap-3 self-start rounded-[18px] border border-border bg-surface/90 p-1.5 pr-4 shadow-soft transition hover:-translate-y-px hover:border-primary-200 hover:bg-surface hover:shadow-elevated"
           href="/profile"
         >
-          {user.avatarUrl ? (
-            <Image
-              alt=""
-              className="h-full w-full object-cover"
-              height={36}
-              sizes="36px"
-              src={user.avatarUrl}
-              width={36}
-            />
-          ) : (
-            initials
-          )}
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-primary-100 bg-primary-50 text-sm font-semibold text-primary">
+            {user.avatarUrl ? (
+              <Image
+                alt=""
+                className="h-full w-full object-cover"
+                height={44}
+                sizes="44px"
+                src={user.avatarUrl}
+                width={44}
+              />
+            ) : (
+              initials
+            )}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-left text-sm font-semibold text-foreground">
+              {fullName}
+            </span>
+            <span className="block truncate text-left text-[12px] text-foreground/70">
+              {roleLabels[user.role]} - Mi perfil
+            </span>
+          </span>
+          <ChevronRight
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary"
+          />
         </Link>
       </div>
     </header>

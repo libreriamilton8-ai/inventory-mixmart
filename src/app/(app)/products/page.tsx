@@ -13,6 +13,7 @@ import {
   SubmitButton,
 } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
 import {
   decimalToNumber,
   formatCurrency,
@@ -134,28 +135,24 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
             <span className="text-xs font-medium text-muted-foreground">
               Categoria
             </span>
-            <select
-              className="input"
-              defaultValue={category ?? ''}
-              name="category"
-            >
+            <Select defaultValue={category ?? ''} name="category">
               <option value="">Todas</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
                   {productCategoryLabels[item]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">
               Estado
             </span>
-            <select className="input" defaultValue={status} name="status">
+            <Select defaultValue={status} name="status">
               <option value="active">Activos</option>
               <option value="inactive">Inactivos</option>
               {canManage ? <option value="deleted">Eliminados</option> : null}
-            </select>
+            </Select>
           </label>
           <div className="flex items-end">
             <button className="btn btn-primary w-full" type="submit">
@@ -171,7 +168,7 @@ async function ProductsContent({ searchParams }: ProductsPageProps) {
         {products.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3">Categoria</th>
@@ -374,8 +371,7 @@ function ProductFormBody({
         <span className="text-xs font-semibold text-muted-foreground">
           Categoria
         </span>
-        <select
-          className="input"
+        <Select
           defaultValue={product?.category ?? 'SCHOOL_SUPPLIES'}
           name="category"
         >
@@ -384,7 +380,7 @@ function ProductFormBody({
               {productCategoryLabels[item]}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="space-y-1.5">
         <span className="text-xs font-semibold text-muted-foreground">SKU</span>

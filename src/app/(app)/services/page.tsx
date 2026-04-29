@@ -12,6 +12,7 @@ import {
   SubmitButton,
 } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import {
   decimalToNumber,
   formatCurrency,
@@ -115,24 +116,24 @@ async function ServicesContent({ searchParams }: ServicesPageProps) {
               <form action={createServiceRecord} className="grid gap-4 p-6 md:grid-cols-2">
                 <label className="space-y-1.5 md:col-span-2">
                   <span className="text-xs font-semibold text-muted-foreground">Tipo</span>
-                  <select className="input" name="serviceTypeId" required>
+                  <Select name="serviceTypeId" required>
                     <option value="">Seleccionar</option>
                     {serviceTypes.map((type) => (
                       <option key={type.id} value={type.id}>
                         {type.name} - {serviceKindLabels[type.kind]}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">Estado</span>
-                  <select className="input" name="status" defaultValue="RECEIVED">
+                  <Select defaultValue="RECEIVED" name="status">
                     <option value="RECEIVED">Recibido</option>
                     <option value="IN_PROGRESS">En proceso</option>
                     <option value="COMPLETED">Completado</option>
                     <option value="DELIVERED">Entregado</option>
                     <option value="CANCELLED">Cancelado</option>
-                  </select>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">Cantidad</span>
@@ -208,10 +209,10 @@ async function ServicesContent({ searchParams }: ServicesPageProps) {
                       <span className="text-xs font-semibold text-muted-foreground">
                         Tipo
                       </span>
-                      <select className="input" name="kind" defaultValue="IN_HOUSE">
+                      <Select defaultValue="IN_HOUSE" name="kind">
                         <option value="IN_HOUSE">Interno</option>
                         <option value="OUTSOURCED">Tercerizado</option>
-                      </select>
+                      </Select>
                     </label>
                     <label className="space-y-1.5">
                       <span className="text-xs font-semibold text-muted-foreground">
@@ -234,7 +235,7 @@ async function ServicesContent({ searchParams }: ServicesPageProps) {
 
                   <div className="overflow-x-auto rounded-card border border-border">
                     <table className="table-operational">
-                      <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+                      <thead className="table-operational-head">
                         <tr>
                           <th className="px-3 py-2">Insumo</th>
                           <th className="px-3 py-2">Cantidad por unidad</th>
@@ -244,14 +245,14 @@ async function ServicesContent({ searchParams }: ServicesPageProps) {
                         {Array.from({ length: 4 }).map((_, index) => (
                           <tr key={index}>
                             <td className="px-3 py-2">
-                              <select className="input" name="supplyProductId">
+                              <Select name="supplyProductId">
                                 <option value="">Seleccionar</option>
                                 {products.map((product) => (
                                   <option key={product.id} value={product.id}>
                                     {product.name} ({product.unitName})
                                   </option>
                                 ))}
-                              </select>
+                              </Select>
                             </td>
                             <td className="px-3 py-2">
                               <input
@@ -306,7 +307,7 @@ async function ServicesContent({ searchParams }: ServicesPageProps) {
         {records.length ? (
           <div className="overflow-x-auto">
             <table className="table-operational">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
+              <thead className="table-operational-head">
                 <tr>
                   <th className="px-4 py-3">Servicio</th>
                   <th className="px-4 py-3">Tipo</th>
