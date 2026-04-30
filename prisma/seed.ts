@@ -13,6 +13,7 @@ import type {
 } from "./generated/client";
 import { getDatabaseConnection } from "../src/lib/database-url";
 import { hashPassword } from "../src/lib/password";
+import { log } from "console";
 
 const ADMIN_EMAIL =
   process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase() ||
@@ -21,6 +22,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD;
 const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD || ADMIN_PASSWORD;
 
 const database = getDatabaseConnection();
+log(database);
 const adapter = new PrismaPg(
   {
     connectionString: database.connectionString,

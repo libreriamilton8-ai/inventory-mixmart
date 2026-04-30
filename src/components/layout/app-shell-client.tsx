@@ -188,22 +188,22 @@ export function AppTopBar({ user }: { user: AppTopBarUser }) {
     : currentRoute?.description ?? "Libreria y Bazar";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/80 bg-background/92 px-4 pt-6 pb-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:px-9">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <header className="sticky top-0 z-20 border-b border-border/80 bg-background/92 px-4 pb-3 pt-4 backdrop-blur supports-backdrop-filter:bg-background/80 sm:pb-4 sm:pt-6 lg:px-9">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight text-foreground">
+          <h1 className="font-display text-[24px] font-medium leading-tight tracking-tight text-foreground sm:text-[28px]">
             {heading}
           </h1>
-          <p className="mt-1 max-w-3xl text-[14px] leading-6 text-foreground/72">
+          <p className="mt-1 line-clamp-2 max-w-3xl text-[12.5px] leading-5 text-foreground/72 sm:text-[14px] sm:leading-6">
             {description}
           </p>
         </div>
         <Link
           aria-label={`${fullName} - Mi perfil`}
-          className="group flex max-w-full items-center gap-3 self-start rounded-[18px] border border-border bg-surface/90 p-1.5 pr-4 shadow-soft transition hover:-translate-y-px hover:border-primary-200 hover:bg-surface hover:shadow-elevated"
+          className="group flex max-w-full shrink-0 items-center gap-3 rounded-[16px] border border-border bg-surface/90 p-1.5 shadow-soft transition hover:-translate-y-px hover:border-primary-200 hover:bg-surface hover:shadow-elevated sm:rounded-[18px] sm:pr-4"
           href="/profile"
         >
-          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-primary-100 bg-primary-50 text-sm font-semibold text-primary">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] border border-primary-100 bg-primary-50 text-sm font-semibold text-primary sm:h-11 sm:w-11 sm:rounded-[14px]">
             {user.avatarUrl ? (
               <Image
                 alt=""
@@ -217,7 +217,7 @@ export function AppTopBar({ user }: { user: AppTopBarUser }) {
               initials
             )}
           </span>
-          <span className="min-w-0">
+          <span className="hidden min-w-0 sm:block">
             <span className="block truncate text-left text-sm font-semibold text-foreground">
               {fullName}
             </span>
@@ -227,7 +227,7 @@ export function AppTopBar({ user }: { user: AppTopBarUser }) {
           </span>
           <ChevronRight
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary"
+            className="hidden h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary sm:block"
           />
         </Link>
       </div>
@@ -240,7 +240,7 @@ export function MobileNavigation({ role }: { role: UserRole }) {
   const visibleItems = getVisibleGroups(role).flatMap((group) => group.items);
 
   return (
-    <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-card border border-border bg-surface/98 backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 gap-1 rounded-[22px] border border-primary-100 bg-surface/94 p-1.5 shadow-elevated backdrop-blur lg:hidden">
       {visibleItems.slice(0, 5).map((item) => {
         const Icon = item.icon;
         const active = isActive(pathname, item.href);
@@ -249,16 +249,16 @@ export function MobileNavigation({ role }: { role: UserRole }) {
           <Link
             aria-label={item.label}
             className={cn(
-              "flex h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
+              "flex h-12 flex-col items-center justify-center gap-0.5 rounded-[16px] text-[10.5px] font-semibold transition",
               active
-                ? "text-primary"
+                ? "bg-primary text-primary-foreground shadow-pill"
                 : "text-muted-foreground hover:bg-primary-50 hover:text-primary",
             )}
             href={item.href}
             key={item.href}
             prefetch="auto"
           >
-            <Icon aria-hidden="true" className="h-5 w-5" />
+            <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
             <span className="max-w-full truncate px-1">{item.label}</span>
           </Link>
         );

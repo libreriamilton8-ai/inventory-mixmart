@@ -87,7 +87,7 @@ export function getRange(value: string | undefined): ResolvedRange {
       previousStart,
       previousEnd,
       label: DATE_RANGE_LABELS[key],
-      detail: `${dateFormatter.format(start)} – ${dateFormatter.format(end)}`,
+      detail: `${dateFormatter.format(start)} - ${dateFormatter.format(end)}`,
     };
   }
 
@@ -104,7 +104,7 @@ export function getRange(value: string | undefined): ResolvedRange {
     previousStart,
     previousEnd,
     label: DATE_RANGE_LABELS[key],
-    detail: `${dateFormatter.format(start)} – ${dateFormatter.format(todayEnd)}`,
+    detail: `${dateFormatter.format(start)} - ${dateFormatter.format(todayEnd)}`,
   };
 }
 
