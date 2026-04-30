@@ -411,7 +411,7 @@ export function DateRangePicker({
                 </div>
 
                 <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
-                  <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                  {/* <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
                     {activeRange?.from
                       ? `${fromLabel}: ${longFormatter.format(activeRange.from)}${
                           activeRange?.to &&
@@ -419,8 +419,9 @@ export function DateRangePicker({
                             ? ` - ${toLabel}: ${longFormatter.format(activeRange.to)}`
                             : ''
                         }`
-                      : 'Selecciona un rango o usa un atajo rapido.'}
-                  </p>
+                      : 'Selecciona un rango de fechas'}
+                  </p> */}
+                  <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground"></p>
                   <div className="flex shrink-0 items-center gap-2">
                     {allowClear ? (
                       <Button
