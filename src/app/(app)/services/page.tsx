@@ -306,6 +306,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
       </div>
 
       <FilterBar>
+        <DateRangeFilter label="Periodo de servicio" />
         <SelectFilter
           allLabel="Todos"
           label="Tipo"
@@ -330,13 +331,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         <SelectFilter
           allLabel="Todos"
           label="Servicio"
-          className="xl:col-span-2"
           name="serviceTypeId"
           options={serviceTypeOptions}
-        />
-        <DateRangeFilter
-          className="md:col-span-2 xl:col-span-2"
-          label="Periodo de servicio"
         />
       </FilterBar>
 

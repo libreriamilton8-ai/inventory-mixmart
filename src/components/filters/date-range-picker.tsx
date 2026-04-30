@@ -12,12 +12,14 @@ import { cn } from '@/lib/utils';
 
 type DateRangePickerProps = {
   allowClear?: boolean;
+  ariaLabel?: string;
   fromValue: string;
   toValue: string;
   onChange: (next: { from: string; to: string }) => void;
   fromLabel?: string;
   toLabel?: string;
   placeholder?: string;
+  triggerClassName?: string;
 };
 
 type Position = {
@@ -152,12 +154,14 @@ function resolvePreset(range: DateRange | undefined) {
 
 export function DateRangePicker({
   allowClear = true,
+  ariaLabel,
   fromValue,
   toValue,
   onChange,
   fromLabel = 'Desde',
   toLabel = 'Hasta',
   placeholder = 'Seleccionar periodo',
+  triggerClassName,
 }: DateRangePickerProps) {
   const committedRange = useMemo(
     () => normalizeRange(fromValue, toValue),
@@ -274,9 +278,11 @@ export function DateRangePicker({
       <button
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-label={ariaLabel}
         className={cn(
           'flex min-h-11 w-full items-center justify-between gap-3 rounded-control border border-input bg-surface-elevated px-3 py-2 text-left text-sm font-medium transition focus:outline-none focus:ring-4 focus:ring-focus hover:border-primary-300',
           open ? 'border-primary-300 ring-4 ring-focus' : '',
+          triggerClassName,
         )}
         onClick={() => {
           if (open) {

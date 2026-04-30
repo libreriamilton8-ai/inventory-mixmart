@@ -106,7 +106,8 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
         <FlashMessage type="error">Stock insuficiente para completar la salida.</FlashMessage>
       ) : null}
 
-      <FilterBar contentClassName="xl:grid-cols-3">
+      <FilterBar>
+        <DateRangeFilter label="Periodo de salida" />
         <SelectFilter
           allLabel="Todos"
           label="Motivo"
@@ -116,10 +117,6 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
             { label: "Merma", value: "WASTE" },
             { label: "Uso interno", value: "INTERNAL_USE" },
           ]}
-        />
-        <DateRangeFilter
-          className="md:col-span-2 xl:col-span-3"
-          label="Periodo de salida"
         />
       </FilterBar>
 

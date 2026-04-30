@@ -44,12 +44,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
   return (
     <div className="space-y-5">
       <FilterBar>
-        <SearchFilter
-          className="xl:col-span-2"
-          label="Buscar"
-          name="q"
-          placeholder="Producto"
-        />
+        <SearchFilter label="Buscar" name="q" placeholder="Producto" />
         <SelectFilter
           allLabel="Todas"
           label="Categoria"

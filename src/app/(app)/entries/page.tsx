@@ -188,8 +188,8 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       ) : null}
 
       <FilterBar>
+        <DateRangeFilter label="Periodo de orden" />
         <SearchFilter
-          className="xl:col-span-2"
           label="Referencia"
           name="q"
           placeholder="Numero o codigo"
@@ -208,10 +208,6 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           label="Proveedor"
           name="supplierId"
           options={supplierOptions}
-        />
-        <DateRangeFilter
-          className="md:col-span-2 xl:col-span-2"
-          label="Periodo de orden"
         />
       </FilterBar>
 

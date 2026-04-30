@@ -1,6 +1,6 @@
 "use client";
 
-import { ListFilter, RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   createContext,
@@ -40,17 +40,9 @@ function useFilterContext(component: string) {
 type FilterBarProps = {
   children: ReactNode;
   className?: string;
-  contentClassName?: string;
-  title?: string;
-  scrollKey?: string;
 };
 
-export function FilterBar({
-  children,
-  className,
-  contentClassName,
-  title = "Filtros",
-}: FilterBarProps) {
+export function FilterBar({ children, className }: FilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -115,27 +107,23 @@ export function FilterBar({
   return (
     <FilterContext.Provider value={contextValue}>
       <section
+        aria-label="Filtros"
         className={cn(
-          "overflow-hidden rounded-card border border-border bg-surface-elevated shadow-soft",
+          "flex flex-wrap items-center gap-2 rounded-control border border-border bg-surface-elevated px-2.5 py-2 shadow-soft",
           className,
         )}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary">
-              <ListFilter aria-hidden="true" className="h-3.5 w-3.5" />
-            </span>
-            {title}
-            {isPending ? (
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"
-              />
-            ) : null}
-          </div>
+        {children}
+        <div className="ml-auto flex items-center gap-2">
+          {isPending ? (
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"
+            />
+          ) : null}
           {hasActiveFilters ? (
             <button
-              className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-error/30 hover:bg-error-surface hover:text-error"
+              className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted-foreground transition hover:border-error/30 hover:bg-error-surface hover:text-error"
               onClick={() => {
                 const preserved = new URLSearchParams();
                 ["success", "error"].forEach((key) => {
@@ -151,38 +139,8 @@ export function FilterBar({
             </button>
           ) : null}
         </div>
-        <div
-          className={cn(
-            "grid gap-x-3 gap-y-2.5 bg-surface px-4 py-3 sm:px-5 sm:py-4 md:grid-cols-2 xl:grid-cols-4",
-            contentClassName,
-          )}
-        >
-          {children}
-        </div>
       </section>
     </FilterContext.Provider>
-  );
-}
-
-type FieldShellProps = {
-  children: ReactNode;
-  className?: string;
-  label: string;
-};
-
-function FieldShell({ children, className, label }: FieldShellProps) {
-  return (
-    <label
-      className={cn(
-        "flex min-w-0 flex-col gap-1.5",
-        className,
-      )}
-    >
-      <span className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 
@@ -220,31 +178,35 @@ export function SearchFilter({
   }, []);
 
   return (
-    <FieldShell className={className} label={label}>
-      <span className="relative block">
-        <span className="pointer-events-none absolute left-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-muted-foreground">
-          <Search aria-hidden="true" className="h-3.5 w-3.5" />
-        </span>
-        <input
-          className="input pl-9"
-          defaultValue={initial}
-          onChange={(event) => {
-            const nextValue = event.target.value;
-
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-            }
-
-            timeoutRef.current = setTimeout(() => {
-              setParam(name, nextValue.trim() || undefined);
-            }, 300);
-          }}
-          placeholder={placeholder}
-          ref={inputRef}
-          type="search"
-        />
+    <div
+      className={cn(
+        "relative min-w-0 flex-1 basis-full sm:basis-auto sm:w-60",
+        className,
+      )}
+    >
+      <span className="pointer-events-none absolute left-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-muted-foreground">
+        <Search aria-hidden="true" className="h-3.5 w-3.5" />
       </span>
-    </FieldShell>
+      <input
+        aria-label={label}
+        className="h-9 w-full rounded-control border border-input bg-surface-elevated pl-8 pr-3 text-sm text-foreground transition placeholder:text-muted-foreground hover:border-primary-300 focus:border-ring focus:outline-none focus:ring-4 focus:ring-focus"
+        defaultValue={initial}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          timeoutRef.current = setTimeout(() => {
+            setParam(name, nextValue.trim() || undefined);
+          }, 300);
+        }}
+        placeholder={placeholder ?? label}
+        ref={inputRef}
+        type="search"
+      />
+    </div>
   );
 }
 
@@ -272,9 +234,12 @@ export function SelectFilter({
   const value = values[name] ?? "";
 
   return (
-    <FieldShell className={className} label={label}>
+    <div className={cn("min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:basis-auto sm:w-44", className)}>
       <Select
+        aria-label={label}
+        className="h-9 min-h-9 gap-2 px-2.5 py-1.5 text-sm font-normal"
         onValueChange={(next) => setParam(name, next || undefined)}
+        placeholder={`${label}: ${allLabel}`}
         value={value}
       >
         <option value="">{allLabel}</option>
@@ -284,7 +249,7 @@ export function SelectFilter({
           </option>
         ))}
       </Select>
-    </FieldShell>
+    </div>
   );
 }
 
@@ -314,16 +279,18 @@ export function DateRangeFilter({
   const toValue = values[toName] ?? fallbackToValue ?? "";
 
   return (
-    <FieldShell className={className} label={label}>
+    <div className={cn("min-w-0 flex-1 basis-full sm:basis-auto sm:w-64", className)}>
       <DateRangePicker
         allowClear={allowClear}
+        ariaLabel={label}
         fromValue={fromValue}
         onChange={({ from, to }) =>
           setMany({ [fromName]: from || undefined, [toName]: to || undefined })
         }
-        placeholder={placeholder}
+        placeholder={placeholder ?? label}
         toValue={toValue}
+        triggerClassName="h-9 min-h-0 px-2.5 py-1.5 text-sm font-normal"
       />
-    </FieldShell>
+    </div>
   );
 }
