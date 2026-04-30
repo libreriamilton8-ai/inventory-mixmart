@@ -248,8 +248,11 @@ export function DateRangePicker({
   const hasValue = Boolean(fromValue || toValue);
   const activePreset = resolvePreset(activeRange);
   const triggerLabel = formatRangeLabel(committedRange, placeholder);
+  const canApply = Boolean(draftRange?.from ?? draftRange?.to);
 
   const applySelection = () => {
+    if (!canApply) return;
+
     const values = rangeToValues(draftRange);
     onChange(values);
     setOpen(false);
@@ -257,9 +260,6 @@ export function DateRangePicker({
 
   const clearSelection = () => {
     setDraftRange(undefined);
-    onChange({ from: '', to: '' });
-    setMonth(startOfMonth(new Date()));
-    setOpen(false);
   };
 
   const applyPreset = (key: (typeof PRESETS)[number]['key']) => {
@@ -267,8 +267,6 @@ export function DateRangePicker({
     const nextRange = { from: next.from, to: next.to };
     setDraftRange(nextRange);
     setMonth(startOfMonth(next.from));
-    onChange({ from: toISO(next.from), to: toISO(next.to) });
-    setOpen(false);
   };
 
   return (
@@ -403,6 +401,7 @@ export function DateRangePicker({
                     month={month}
                     onMonthChange={setMonth}
                     onSelect={setDraftRange}
+                    required
                     selected={draftRange}
                     showOutsideDays={false}
                     timeZone={timeZone}
@@ -434,7 +433,7 @@ export function DateRangePicker({
                       </Button>
                     ) : null}
                     <Button
-                      disabled={!activeRange?.from}
+                      disabled={!canApply}
                       onClick={applySelection}
                       size="sm"
                       type="button"
