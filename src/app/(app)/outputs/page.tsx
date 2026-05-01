@@ -1,10 +1,4 @@
-import {
-  BriefcaseBusiness,
-  CircleAlert,
-  ListFilter,
-  Plus,
-  ShoppingCart,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { Suspense } from "react";
 
 import {
@@ -12,7 +6,10 @@ import {
   FilterBar,
   SelectFilter,
 } from "@/components/filters";
+import { OutputForm } from "@/components/outputs/output-form";
+import { RecentOutputItem } from "@/components/outputs/recent-output-item";
 import {
+  DataTable,
   EmptyState,
   FlashMessage,
   PageHeader,
@@ -22,10 +19,9 @@ import {
   StatusBadge,
   TableSkeleton,
 } from "@/components/shared";
-import { OutputForm } from "@/components/outputs/output-form";
 import { FormModal } from "@/components/ui/modal";
+import { dateRangeWhere, sumLineCost, sumLineRevenue } from "@/lib/calc";
 import {
-  decimalToNumber,
   formatCurrency,
   formatDate,
   formatDecimal,
@@ -92,7 +88,9 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
                 category: product.category,
                 unitName: product.unitName,
                 currentStock: formatDecimal(product.currentStock, 3),
-                salePrice: product.salePrice ? formatDecimal(product.salePrice, 2) : null,
+                salePrice: product.salePrice
+                  ? formatDecimal(product.salePrice, 2)
+                  : null,
               }))}
             />
           </FormModal>
@@ -103,7 +101,9 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
         <FlashMessage type="success">Salida registrada correctamente.</FlashMessage>
       ) : null}
       {params.error === "stock" ? (
-        <FlashMessage type="error">Stock insuficiente para completar la salida.</FlashMessage>
+        <FlashMessage type="error">
+          Stock insuficiente para completar la salida.
+        </FlashMessage>
       ) : null}
 
       <FilterBar>
@@ -131,17 +131,11 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
 }
 
 async function OutputsList({ searchParams }: { searchParams: OutputsSearchParams }) {
-  const occurredAtFilter: Record<string, Date> = {};
-  if (searchParams.from)
-    occurredAtFilter.gte = new Date(`${searchParams.from}T00:00:00.000`);
-  if (searchParams.to)
-    occurredAtFilter.lte = new Date(`${searchParams.to}T23:59:59.999`);
+  const occurredAtFilter = dateRangeWhere(searchParams.from, searchParams.to);
 
   const outputs = await prisma.stockOutput.findMany({
     where: {
-      ...(Object.keys(occurredAtFilter).length
-        ? { occurredAt: occurredAtFilter }
-        : {}),
+      ...(occurredAtFilter ? { occurredAt: occurredAtFilter } : {}),
       ...(searchParams.reason ? { reason: searchParams.reason } : {}),
     },
     include: {
@@ -156,16 +150,13 @@ async function OutputsList({ searchParams }: { searchParams: OutputsSearchParams
     take: 100,
   });
 
-  const outputSummary = outputs.reduce(
-    (summary, output) => {
-      const totals = getOutputTotals(output);
-      return {
-        cost: summary.cost + totals.cost,
-        items: summary.items + output.items.length,
-        revenue: summary.revenue + totals.revenue,
-      };
-    },
-    { cost: 0, items: 0, revenue: 0 },
+  const summary = outputs.reduce(
+    (acc, output) => ({
+      cost: acc.cost + sumLineCost(output.items),
+      revenue: acc.revenue + sumLineRevenue(output.items),
+      items: acc.items + output.items.length,
+    }),
+    { cost: 0, revenue: 0, items: 0 },
   );
 
   return (
@@ -173,70 +164,58 @@ async function OutputsList({ searchParams }: { searchParams: OutputsSearchParams
       <Section>
         <SectionHeader title="Historial completo" />
         {outputs.length ? (
-          <div className="overflow-x-auto">
-            <table className="table-operational">
-              <thead className="table-operational-head">
-                <tr>
-                  <th className="px-4 py-3">Motivo</th>
-                  <th className="px-4 py-3">Fecha</th>
-                  <th className="px-4 py-3">Creado por</th>
-                  <th className="px-4 py-3">Items</th>
-                  <th className="px-4 py-3">Costo</th>
-                  <th className="px-4 py-3">Ingreso</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {outputs.map((output) => {
-                  const { cost, revenue } = getOutputTotals(output);
+          <DataTable
+            headers={["Motivo", "Fecha", "Creado por", "Items", "Costo", "Ingreso"]}
+          >
+            {outputs.map((output) => {
+              const cost = sumLineCost(output.items);
+              const revenue = sumLineRevenue(output.items);
 
-                  return (
-                    <tr key={output.id}>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          tone={output.reason === "SALE" ? "success" : "warning"}
-                        >
-                          {stockOutputReasonLabels[output.reason]}
-                        </StatusBadge>
-                      </td>
-                      <td className="px-4 py-3">{formatDate(output.occurredAt)}</td>
-                      <td className="px-4 py-3">
-                        {output.createdBy.firstName} {output.createdBy.lastName}
-                      </td>
-                      <td className="px-4 py-3">
-                        <details className="[&_summary::-webkit-details-marker]:hidden">
-                          <summary className="inline-flex cursor-pointer list-none items-center rounded-control border border-primary-200 bg-primary-50 px-2 py-1 text-primary">
-                            {output.items.length} items
-                          </summary>
-                          <ul className="popover-window mt-2 space-y-2">
-                            {output.items.map((item) => (
-                              <li
-                                className="flex flex-wrap items-center gap-2"
-                                key={item.id}
-                              >
-                                <span>
-                                  {item.product.name}:{" "}
-                                  {formatDecimal(item.quantity, 3)}{" "}
-                                  {item.product.unitName}
-                                </span>
-                                <ProductCategoryBadge
-                                  category={item.product.category}
-                                  className="min-h-6 rounded-control px-2 py-0.5"
-                                />
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      </td>
-                      <td className="px-4 py-3">{formatCurrency(cost)}</td>
-                      <td className="px-4 py-3">
-                        {output.reason === "SALE" ? formatCurrency(revenue) : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              return (
+                <tr key={output.id}>
+                  <td className="px-4 py-3">
+                    <StatusBadge
+                      tone={output.reason === "SALE" ? "success" : "warning"}
+                    >
+                      {stockOutputReasonLabels[output.reason]}
+                    </StatusBadge>
+                  </td>
+                  <td className="px-4 py-3">{formatDate(output.occurredAt)}</td>
+                  <td className="px-4 py-3">
+                    {output.createdBy.firstName} {output.createdBy.lastName}
+                  </td>
+                  <td className="px-4 py-3">
+                    <details className="[&_summary::-webkit-details-marker]:hidden">
+                      <summary className="inline-flex cursor-pointer list-none items-center rounded-control border border-primary-200 bg-primary-50 px-2 py-1 text-primary">
+                        {output.items.length} items
+                      </summary>
+                      <ul className="popover-window mt-2 space-y-2">
+                        {output.items.map((item) => (
+                          <li
+                            className="flex flex-wrap items-center gap-2"
+                            key={item.id}
+                          >
+                            <span>
+                              {item.product.name}: {formatDecimal(item.quantity, 3)}{" "}
+                              {item.product.unitName}
+                            </span>
+                            <ProductCategoryBadge
+                              category={item.product.category}
+                              className="min-h-6 rounded-control px-2 py-0.5"
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </td>
+                  <td className="px-4 py-3">{formatCurrency(cost)}</td>
+                  <td className="px-4 py-3">
+                    {output.reason === "SALE" ? formatCurrency(revenue) : "-"}
+                  </td>
+                </tr>
+              );
+            })}
+          </DataTable>
         ) : (
           <EmptyState
             title="Sin salidas"
@@ -250,15 +229,12 @@ async function OutputsList({ searchParams }: { searchParams: OutputsSearchParams
           <SectionHeader title="Resumen rapido" />
           <div className="space-y-3 p-4">
             <SummaryRow label="Salidas visibles" value={String(outputs.length)} />
-            <SummaryRow label="Items retirados" value={String(outputSummary.items)} />
+            <SummaryRow label="Items retirados" value={String(summary.items)} />
             <SummaryRow
               label="Ingreso ventas"
-              value={formatCurrency(outputSummary.revenue)}
+              value={formatCurrency(summary.revenue)}
             />
-            <SummaryRow
-              label="Costo salidas"
-              value={formatCurrency(outputSummary.cost)}
-            />
+            <SummaryRow label="Costo salidas" value={formatCurrency(summary.cost)} />
           </div>
         </Section>
 
@@ -282,115 +258,11 @@ async function OutputsList({ searchParams }: { searchParams: OutputsSearchParams
   );
 }
 
-function getOutputTotals(output: {
-  items: {
-    quantity: unknown;
-    unitCost: unknown;
-    unitSalePrice: unknown;
-  }[];
-}) {
-  const cost = output.items.reduce(
-    (sum, item) =>
-      sum +
-      decimalToNumber(item.quantity as never) *
-        decimalToNumber(item.unitCost as never),
-    0,
-  );
-  const revenue = output.items.reduce(
-    (sum, item) =>
-      sum +
-      decimalToNumber(item.quantity as never) *
-        decimalToNumber(item.unitSalePrice as never),
-    0,
-  );
-
-  return { cost, revenue };
-}
-
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface-muted px-3 py-2">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>
-  );
-}
-
-function RecentOutputItem({
-  output,
-}: {
-  output: {
-    id: string;
-    reason: "SALE" | "WASTE" | "INTERNAL_USE";
-    occurredAt: Date;
-    items: {
-      id: string;
-      quantity: unknown;
-      unitCost: unknown;
-      unitSalePrice: unknown;
-      product: {
-        name: string;
-        unitName: string;
-        category: Parameters<typeof ProductCategoryBadge>[0]["category"];
-      };
-    }[];
-  };
-}) {
-  const { revenue } = getOutputTotals(output);
-  const Icon =
-    output.reason === "SALE"
-      ? ShoppingCart
-      : output.reason === "WASTE"
-        ? CircleAlert
-        : BriefcaseBusiness;
-
-  return (
-    <details className="group px-4 py-3 [&_summary::-webkit-details-marker]:hidden">
-      <summary className="flex cursor-pointer list-none items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card border border-primary-100 bg-primary-50 text-primary">
-          <Icon aria-hidden="true" className="h-4 w-4" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center justify-between gap-2">
-            <span className="truncate text-sm font-semibold text-foreground">
-              {stockOutputReasonLabels[output.reason]}
-            </span>
-            <span className="shrink-0 text-sm font-semibold text-foreground">
-              {output.reason === "SALE" ? formatCurrency(revenue) : "-"}
-            </span>
-          </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            {formatDate(output.occurredAt)} - {output.items.length} items
-          </span>
-        </span>
-      </summary>
-      <div className="popover-window mt-3">
-        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <ListFilter aria-hidden="true" className="h-3.5 w-3.5" />
-          Detalle
-        </div>
-        <div className="space-y-2">
-          {output.items.map((item) => (
-            <div
-              className="rounded-control border border-border bg-surface px-2 py-2"
-              key={item.id}
-            >
-              <p className="text-sm font-medium text-foreground">
-                {item.product.name}
-              </p>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {formatDecimal(item.quantity as never, 3)} {item.product.unitName}
-                </span>
-                <ProductCategoryBadge
-                  category={item.product.category}
-                  className="min-h-6 rounded-control px-2 py-0.5"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </details>
   );
 }

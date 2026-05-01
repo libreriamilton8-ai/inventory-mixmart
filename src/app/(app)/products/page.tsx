@@ -1,19 +1,21 @@
-import { Pencil, Plus, RotateCcw } from 'lucide-react';
-import { Fragment, Suspense } from 'react';
+import { Pencil, Plus } from 'lucide-react';
+import { Suspense } from 'react';
 
 import { FilterBar, SearchFilter, SelectFilter } from '@/components/filters';
+import { ProductForm } from '@/components/products/product-form';
 import {
+  DataTable,
   EmptyState,
   FlashMessage,
   PageHeader,
   ProductCategoryBadge,
+  RecordActions,
+  RecordStatusBadge,
   Section,
   StatusBadge,
-  SubmitButton,
   TableSkeleton,
 } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
-import { Select } from '@/components/ui/select';
 import {
   decimalToNumber,
   formatCurrency,
@@ -24,12 +26,10 @@ import { requireActiveUser } from '@/lib/auth';
 import { canManageCatalog } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
-  createProduct,
   deactivateProduct,
   reactivateProduct,
   restoreProduct,
   softDeleteProduct,
-  updateProduct,
 } from '@/server/actions';
 import type { ProductCategory } from '../../../../prisma/generated/client';
 
@@ -79,7 +79,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 </>
               }
             >
-              <ProductFormBody />
+              <ProductForm />
             </FormModal>
           ) : null
         }
@@ -155,153 +155,93 @@ async function ProductsList({
     take: 100,
   });
 
-  return (
-    <Section>
-      {products.length ? (
-        <div className="overflow-x-auto">
-            <table className="table-operational">
-              <thead className="table-operational-head">
-                <tr>
-                  <th className="px-4 py-3">Producto</th>
-                  <th className="px-4 py-3">Categoria</th>
-                  <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3">Minimo</th>
-                  {role === 'ADMIN' ? (
-                    <th className="px-4 py-3">Costo</th>
-                  ) : null}
-                  {role === 'ADMIN' ? (
-                    <th className="px-4 py-3">Venta sug.</th>
-                  ) : null}
-                  <th className="px-4 py-3">Estado</th>
-                  {canManage ? <th className="px-4 py-3">Acciones</th> : null}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {products.map((product) => (
-                  <Fragment key={product.id}>
-                    <tr>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-foreground">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {product.sku || product.barcode || product.unitName}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <ProductCategoryBadge category={product.category} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge tone={stockTone(product)}>
-                          {formatDecimal(product.currentStock, 3)}
-                        </StatusBadge>
-                      </td>
-                      <td className="px-4 py-3">
-                        {formatDecimal(product.minimumStock, 3)}
-                      </td>
-                      {role === 'ADMIN' ? (
-                        <td className="px-4 py-3">
-                          {formatCurrency(product.purchasePrice)}
-                        </td>
-                      ) : null}
-                      {role === 'ADMIN' ? (
-                        <td className="px-4 py-3">
-                          {product.salePrice
-                            ? formatCurrency(product.salePrice)
-                            : '-'}
-                        </td>
-                      ) : null}
-                      <td className="px-4 py-3">
-                        {product.deletedAt ? (
-                          <StatusBadge tone="muted">Eliminado</StatusBadge>
-                        ) : product.isActive ? (
-                          <StatusBadge tone="success">Activo</StatusBadge>
-                        ) : (
-                          <StatusBadge tone="warning">Inactivo</StatusBadge>
-                        )}
-                      </td>
-                      {canManage ? (
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {product.deletedAt ? (
-                              <form action={restoreProduct}>
-                                <input
-                                  name="id"
-                                  type="hidden"
-                                  value={product.id}
-                                />
-                                <SubmitButton className="btn btn-secondary">
-                                  <RotateCcw
-                                    aria-hidden="true"
-                                    className="h-4 w-4"
-                                  />
-                                  Restaurar
-                                </SubmitButton>
-                              </form>
-                            ) : (
-                              <>
-                                <FormModal
-                                  size="lg"
-                                  title="Editar producto"
-                                  description="Actualiza datos y precios."
-                                  triggerClassName="btn-soft"
-                                  trigger={
-                                    <>
-                                      <Pencil
-                                        aria-hidden="true"
-                                        className="h-4 w-4"
-                                      />
-                                      Editar
-                                    </>
-                                  }
-                                >
-                                  <ProductFormBody product={product} />
-                                </FormModal>
-                                <form
-                                  action={
-                                    product.isActive
-                                      ? deactivateProduct
-                                      : reactivateProduct
-                                  }
-                                >
-                                  <input
-                                    name="id"
-                                    type="hidden"
-                                    value={product.id}
-                                  />
-                                  <SubmitButton className="btn btn-ghost border border-border">
-                                    {product.isActive
-                                      ? 'Desactivar'
-                                      : 'Activar'}
-                                  </SubmitButton>
-                                </form>
-                                <form action={softDeleteProduct}>
-                                  <input
-                                    name="id"
-                                    type="hidden"
-                                    value={product.id}
-                                  />
-                                  <SubmitButton className="btn btn-ghost border border-border">
-                                    Ocultar
-                                  </SubmitButton>
-                                </form>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-        </div>
-      ) : (
+  if (!products.length) {
+    return (
+      <Section>
         <EmptyState
           title="Sin productos"
           description="No hay productos con esos filtros."
         />
-      )}
+      </Section>
+    );
+  }
+
+  const headers = [
+    'Producto',
+    'Categoria',
+    'Stock',
+    'Minimo',
+    ...(role === 'ADMIN' ? ['Costo', 'Venta sug.'] : []),
+    'Estado',
+    ...(canManage ? ['Acciones'] : []),
+  ];
+
+  return (
+    <Section>
+      <DataTable headers={headers}>
+        {products.map((product) => (
+          <tr key={product.id}>
+            <td className="px-4 py-3">
+              <p className="font-medium text-foreground">{product.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {product.sku || product.barcode || product.unitName}
+              </p>
+            </td>
+            <td className="px-4 py-3">
+              <ProductCategoryBadge category={product.category} />
+            </td>
+            <td className="px-4 py-3">
+              <StatusBadge tone={stockTone(product)}>
+                {formatDecimal(product.currentStock, 3)}
+              </StatusBadge>
+            </td>
+            <td className="px-4 py-3">{formatDecimal(product.minimumStock, 3)}</td>
+            {role === 'ADMIN' ? (
+              <td className="px-4 py-3">{formatCurrency(product.purchasePrice)}</td>
+            ) : null}
+            {role === 'ADMIN' ? (
+              <td className="px-4 py-3">
+                {product.salePrice ? formatCurrency(product.salePrice) : '-'}
+              </td>
+            ) : null}
+            <td className="px-4 py-3">
+              <RecordStatusBadge
+                deletedAt={product.deletedAt}
+                isActive={product.isActive}
+              />
+            </td>
+            {canManage ? (
+              <td className="px-4 py-3">
+                <RecordActions
+                  deletedAt={product.deletedAt}
+                  editTrigger={
+                    <FormModal
+                      size="lg"
+                      title="Editar producto"
+                      description="Actualiza datos y precios."
+                      triggerClassName="btn-soft"
+                      trigger={
+                        <>
+                          <Pencil aria-hidden="true" className="h-4 w-4" />
+                          Editar
+                        </>
+                      }
+                    >
+                      <ProductForm product={product} />
+                    </FormModal>
+                  }
+                  id={product.id}
+                  isActive={product.isActive}
+                  onActivate={reactivateProduct}
+                  onDeactivate={deactivateProduct}
+                  onRestore={restoreProduct}
+                  onSoftDelete={softDeleteProduct}
+                />
+              </td>
+            ) : null}
+          </tr>
+        ))}
+      </DataTable>
     </Section>
   );
 }
@@ -319,142 +259,4 @@ function stockTone(product: { currentStock: unknown; minimumStock: unknown }) {
   }
 
   return 'success';
-}
-
-function ProductFormBody({
-  product,
-}: {
-  product?: {
-    id: string;
-    sku: string | null;
-    barcode: string | null;
-    name: string;
-    description: string | null;
-    category: ProductCategory;
-    unitName: string;
-    purchasePrice: unknown;
-    salePrice: unknown;
-    minimumStock: unknown;
-  };
-}) {
-  const isEdit = Boolean(product);
-
-  return (
-    <form
-      action={isEdit ? updateProduct : createProduct}
-      className="grid gap-4 p-6 md:grid-cols-3"
-    >
-      {isEdit && product ? (
-        <input name="id" type="hidden" value={product.id} />
-      ) : null}
-      <label className="space-y-1.5 md:col-span-2">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Nombre
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.name}
-          name="name"
-          required
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Categoria
-        </span>
-        <Select
-          defaultValue={product?.category ?? 'SCHOOL_SUPPLIES'}
-          name="category"
-        >
-          {categories.map((item) => (
-            <option key={item} value={item}>
-              {productCategoryLabels[item]}
-            </option>
-          ))}
-        </Select>
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">SKU</span>
-        <input className="input" defaultValue={product?.sku ?? ''} name="sku" />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Codigo barras
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.barcode ?? ''}
-          name="barcode"
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Unidad
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.unitName ?? 'unidad'}
-          name="unitName"
-          required
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Costo ref.
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.purchasePrice?.toString() ?? '0'}
-          min="0"
-          name="purchasePrice"
-          required
-          step="0.01"
-          type="number"
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Venta sugerida
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.salePrice?.toString() ?? ''}
-          min="0"
-          name="salePrice"
-          step="0.01"
-          type="number"
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Stock minimo
-        </span>
-        <input
-          className="input"
-          defaultValue={product?.minimumStock?.toString() ?? '0'}
-          min="0"
-          name="minimumStock"
-          required
-          step="0.001"
-          type="number"
-        />
-      </label>
-      <label className="space-y-1.5 md:col-span-3">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Descripcion
-        </span>
-        <textarea
-          className="input min-h-24 py-2"
-          defaultValue={product?.description ?? ''}
-          name="description"
-        />
-      </label>
-      <div className="flex justify-end md:col-span-3">
-        <SubmitButton>
-          <Plus aria-hidden="true" className="h-4 w-4" />
-          {isEdit ? 'Guardar cambios' : 'Crear producto'}
-        </SubmitButton>
-      </div>
-    </form>
-  );
 }
