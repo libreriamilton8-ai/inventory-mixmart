@@ -46,7 +46,7 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
     }),
   ]);
 
-  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.reason ?? ""}`;
+  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.reason ?? ""}|${params.page ?? ""}|${params.pageSize ?? ""}`;
 
   return (
     <div className="space-y-5">

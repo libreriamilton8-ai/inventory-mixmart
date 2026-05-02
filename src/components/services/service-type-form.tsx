@@ -5,20 +5,17 @@ import { SubmitButton } from "@/components/shared";
 import { Select } from "@/components/ui/select";
 import { createServiceType } from "@/server/actions";
 
-type ProductOption = {
-  id: string;
-  name: string;
-  unitName: string;
-};
-
-const SUPPLY_ROWS = 4;
-
-export function ServiceTypeForm({ products }: { products: ProductOption[] }) {
+export function ServiceTypeForm() {
   return (
-    <form action={createServiceType} className="space-y-5 p-6">
-      <div className="grid gap-4 md:grid-cols-2">
+    <form action={createServiceType} className="space-y-4 p-5">
+      <div className="grid gap-3 md:grid-cols-2">
         <Field className="md:col-span-2" label="Nombre">
-          <input className="input" name="name" required />
+          <input
+            className="input"
+            name="name"
+            placeholder="Ej. Impresion B/N, Anillado, Tecnico"
+            required
+          />
         </Field>
         <Field label="Tipo">
           <Select defaultValue="IN_HOUSE" name="kind">
@@ -27,48 +24,27 @@ export function ServiceTypeForm({ products }: { products: ProductOption[] }) {
           </Select>
         </Field>
         <Field label="Unidad">
-          <input className="input" defaultValue="servicio" name="unitName" required />
+          <input
+            className="input"
+            defaultValue="servicio"
+            name="unitName"
+            placeholder="servicio, copia, hora..."
+            required
+          />
         </Field>
         <Field className="md:col-span-2" label="Descripcion">
-          <textarea className="input min-h-16 py-2" name="description" />
+          <textarea
+            className="input min-h-16 py-2"
+            name="description"
+            placeholder="Detalle breve sobre el servicio."
+          />
         </Field>
       </div>
 
-      <div className="overflow-x-auto rounded-card border border-border">
-        <table className="table-operational">
-          <thead className="table-operational-head">
-            <tr>
-              <th className="px-3 py-2">Insumo</th>
-              <th className="px-3 py-2">Cantidad por unidad</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {Array.from({ length: SUPPLY_ROWS }).map((_, index) => (
-              <tr key={index}>
-                <td className="px-3 py-2">
-                  <Select name="supplyProductId">
-                    <option value="">Seleccionar</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} ({product.unitName})
-                      </option>
-                    ))}
-                  </Select>
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    className="input"
-                    min="0.001"
-                    name="quantityPerUnit"
-                    step="0.001"
-                    type="number"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <p className="rounded-control border border-border bg-surface-muted px-3 py-2 text-[11.5px] text-muted-foreground">
+        Los insumos consumidos se eligen al registrar cada servicio. Asi puedes
+        usar lo que realmente gastaste sin estar atado a una receta fija.
+      </p>
 
       <div className="flex justify-end">
         <SubmitButton>

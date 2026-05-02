@@ -1,17 +1,15 @@
 import prisma from "@/lib/prisma";
 import type {
+  ServiceConsumptionInput,
   ServiceRecordInput,
   ServiceTypeInput,
-  ServiceTypeSupplyInput,
 } from "@/services/form-schemas";
 import type { ServiceKind, ServiceStatus } from "../../prisma/generated/client";
 
 export async function createServiceTypeRecord({
   data,
-  supplies,
 }: {
   data: ServiceTypeInput;
-  supplies: ServiceTypeSupplyInput[];
 }) {
   return prisma.serviceType.create({
     data: {
@@ -19,15 +17,6 @@ export async function createServiceTypeRecord({
       kind: data.kind as ServiceKind,
       unitName: data.unitName,
       description: data.description,
-      supplies:
-        data.kind === "IN_HOUSE" && supplies.length
-          ? {
-              create: supplies.map((item) => ({
-                productId: item.productId,
-                quantityPerUnit: item.quantityPerUnit,
-              })),
-            }
-          : undefined,
     },
   });
 }
@@ -42,16 +31,18 @@ export async function setServiceTypeActive(id: string, isActive: boolean) {
 export async function createServiceRecord({
   createdById,
   data,
+  consumptions,
 }: {
   createdById: string;
   data: ServiceRecordInput;
+  consumptions: ServiceConsumptionInput[];
 }) {
   const serviceType = await prisma.serviceType.findUniqueOrThrow({
     where: { id: data.serviceTypeId },
     select: { kind: true },
   });
 
-  return prisma.serviceRecord.create({
+  const record = await prisma.serviceRecord.create({
     data: {
       serviceTypeId: data.serviceTypeId,
       createdById,
@@ -67,4 +58,40 @@ export async function createServiceRecord({
       notes: data.notes,
     },
   });
+
+  if (consumptions.length && data.status !== "CANCELLED") {
+    // Aggregate quantities per product so duplicates don't violate the unique
+    // (service_record_id, product_id) constraint, and skip products already
+    // covered by the legacy service_type_supplies trigger.
+    const aggregated = new Map<string, number>();
+    for (const item of consumptions) {
+      aggregated.set(
+        item.productId,
+        (aggregated.get(item.productId) ?? 0) + item.quantity,
+      );
+    }
+
+    for (const [productId, quantity] of aggregated.entries()) {
+      try {
+        await prisma.serviceConsumption.create({
+          data: {
+            serviceRecordId: record.id,
+            productId,
+            quantity,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (
+          message.includes("uq_service_consumptions_service_product") ||
+          message.includes("Unique constraint")
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+
+  return record;
 }

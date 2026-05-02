@@ -31,7 +31,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ]);
   const canManage = canManageCatalog(user.role);
 
-  const filterKey = `${params.category ?? ''}|${params.q ?? ''}|${params.status ?? ''}`;
+  const filterKey = `${params.category ?? ''}|${params.q ?? ''}|${params.status ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
 
   const statusOptions = [
     { label: 'Activos', value: 'active' },

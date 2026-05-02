@@ -1,6 +1,7 @@
 import {
   DataTable,
   EmptyState,
+  PaginationBar,
   Section,
   SectionHeader,
   StatusBadge,
@@ -14,6 +15,7 @@ import {
   serviceKindLabels,
   serviceStatusLabels,
 } from "@/lib/format";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import type {
   ServiceKind,
@@ -26,6 +28,8 @@ export type ServicesSearchParams = {
   kind?: ServiceKind;
   status?: ServiceStatus;
   serviceTypeId?: string;
+  page?: string;
+  pageSize?: string;
 };
 
 export async function ServicesList({
@@ -34,30 +38,39 @@ export async function ServicesList({
   searchParams: ServicesSearchParams;
 }) {
   const dateFilter = dateRangeWhere(searchParams.from, searchParams.to);
+  const pagination = readPagination(searchParams);
 
-  const records = await prisma.serviceRecord.findMany({
-    where: {
-      ...(dateFilter ? { serviceDate: dateFilter } : {}),
-      ...(searchParams.kind ? { kind: searchParams.kind } : {}),
-      ...(searchParams.status ? { status: searchParams.status } : {}),
-      ...(searchParams.serviceTypeId
-        ? { serviceTypeId: searchParams.serviceTypeId }
-        : {}),
-    },
-    include: {
-      serviceType: { select: { name: true } },
-      createdBy: { select: { firstName: true, lastName: true } },
-      consumptions: {
-        include: {
-          product: {
-            select: { name: true, unitName: true, purchasePrice: true },
+  const where = {
+    ...(dateFilter ? { serviceDate: dateFilter } : {}),
+    ...(searchParams.kind ? { kind: searchParams.kind } : {}),
+    ...(searchParams.status ? { status: searchParams.status } : {}),
+    ...(searchParams.serviceTypeId
+      ? { serviceTypeId: searchParams.serviceTypeId }
+      : {}),
+  };
+
+  const [records, totalItems] = await Promise.all([
+    prisma.serviceRecord.findMany({
+      where,
+      include: {
+        serviceType: { select: { name: true } },
+        createdBy: { select: { firstName: true, lastName: true } },
+        consumptions: {
+          include: {
+            product: {
+              select: { name: true, unitName: true, purchasePrice: true },
+            },
           },
         },
       },
-    },
-    orderBy: { serviceDate: "desc" },
-    take: 100,
-  });
+      orderBy: { serviceDate: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.serviceRecord.count({ where }),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   return (
     <Section>
@@ -126,6 +139,7 @@ export async function ServicesList({
           description="Sin resultados para los filtros."
         />
       )}
+      <PaginationBar {...meta} />
     </Section>
   );
 }

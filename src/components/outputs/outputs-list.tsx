@@ -2,6 +2,7 @@ import { RecentOutputItem } from "@/components/outputs/recent-output-item";
 import {
   DataTable,
   EmptyState,
+  PaginationBar,
   ProductCategoryBadge,
   Section,
   SectionHeader,
@@ -14,6 +15,7 @@ import {
   formatDecimal,
   stockOutputReasonLabels,
 } from "@/lib/format";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import type { StockOutputReason } from "../../../prisma/generated/client";
 
@@ -21,6 +23,8 @@ export type OutputsSearchParams = {
   from?: string;
   to?: string;
   reason?: StockOutputReason;
+  page?: string;
+  pageSize?: string;
 };
 
 export async function OutputsList({
@@ -29,23 +33,32 @@ export async function OutputsList({
   searchParams: OutputsSearchParams;
 }) {
   const occurredAtFilter = dateRangeWhere(searchParams.from, searchParams.to);
+  const pagination = readPagination(searchParams);
 
-  const outputs = await prisma.stockOutput.findMany({
-    where: {
-      ...(occurredAtFilter ? { occurredAt: occurredAtFilter } : {}),
-      ...(searchParams.reason ? { reason: searchParams.reason } : {}),
-    },
-    include: {
-      createdBy: { select: { firstName: true, lastName: true } },
-      items: {
-        include: {
-          product: { select: { name: true, unitName: true, category: true } },
+  const where = {
+    ...(occurredAtFilter ? { occurredAt: occurredAtFilter } : {}),
+    ...(searchParams.reason ? { reason: searchParams.reason } : {}),
+  };
+
+  const [outputs, totalItems] = await Promise.all([
+    prisma.stockOutput.findMany({
+      where,
+      include: {
+        createdBy: { select: { firstName: true, lastName: true } },
+        items: {
+          include: {
+            product: { select: { name: true, unitName: true, category: true } },
+          },
         },
       },
-    },
-    orderBy: { occurredAt: "desc" },
-    take: 100,
-  });
+      orderBy: { occurredAt: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.stockOutput.count({ where }),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   const summary = outputs.reduce(
     (acc, output) => ({
@@ -119,6 +132,7 @@ export async function OutputsList({
             description="Sin resultados para los filtros."
           />
         )}
+        <PaginationBar {...meta} />
       </Section>
 
       <aside className="space-y-5">

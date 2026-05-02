@@ -8,6 +8,7 @@ import {
   FlashMessage,
   PageContentSkeleton,
   PageHeader,
+  PaginationBar,
   RecordActions,
   RecordStatusBadge,
   Section,
@@ -18,6 +19,7 @@ import { Select } from "@/components/ui/select";
 import { formatCurrency, formatDateOnly } from "@/lib/format";
 import { sumLineCost } from "@/lib/calc";
 import { requireActiveUser } from "@/lib/auth";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import { canManageCatalog } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import {
@@ -32,6 +34,8 @@ type SuppliersPageProps = {
     q?: string;
     status?: "active" | "inactive" | "deleted";
     success?: string;
+    page?: string;
+    pageSize?: string;
   }>;
 };
 
@@ -51,42 +55,51 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
   const q = params.q?.trim() ?? "";
   const status = params.status ?? "active";
   const canManage = canManageCatalog(user.role);
+  const pagination = readPagination(params);
 
-  const suppliers = await prisma.supplier.findMany({
-    where: {
-      ...(q
-        ? {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { ruc: { contains: q, mode: "insensitive" } },
-              { contactName: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-      ...(status === "inactive"
-        ? { isActive: false }
-        : status === "deleted"
-          ? { deletedAt: { not: null } }
-          : { isActive: true }),
-    },
-    include: {
-      _count: {
-        select: {
-          productSuppliers: true,
-          stockEntries: true,
+  const where = {
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { ruc: { contains: q, mode: "insensitive" as const } },
+            { contactName: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(status === "inactive"
+      ? { isActive: false }
+      : status === "deleted"
+        ? { deletedAt: { not: null } }
+        : { isActive: true }),
+  };
+
+  const [suppliers, totalItems] = await Promise.all([
+    prisma.supplier.findMany({
+      where,
+      include: {
+        _count: {
+          select: {
+            productSuppliers: true,
+            stockEntries: true,
+          },
+        },
+        stockEntries: {
+          orderBy: { orderedAt: "desc" },
+          take: 3,
+          include: {
+            items: { select: { quantity: true, unitCost: true } },
+          },
         },
       },
-      stockEntries: {
-        orderBy: { orderedAt: "desc" },
-        take: 3,
-        include: {
-          items: { select: { quantity: true, unitCost: true } },
-        },
-      },
-    },
-    orderBy: [{ isActive: "desc" }, { name: "asc" }],
-    take: 100,
-  });
+      orderBy: [{ isActive: "desc" }, { name: "asc" }],
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.supplier.count({ where }),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   const headers = [
     "Proveedor",
@@ -258,6 +271,7 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
             description="No hay proveedores con esos filtros."
           />
         )}
+        <PaginationBar {...meta} />
       </Section>
     </>
   );

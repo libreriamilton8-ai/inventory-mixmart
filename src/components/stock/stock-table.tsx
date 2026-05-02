@@ -1,11 +1,13 @@
 import {
   EmptyState,
+  PaginationBar,
   ProductCategoryBadge,
   Section,
   StatusBadge,
 } from "@/components/shared";
 import { getDatabaseConnection } from "@/lib/database-url";
 import { decimalToNumber, formatDate, formatDecimal, movementTypeLabels } from "@/lib/format";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import {
   Prisma,
@@ -32,36 +34,20 @@ type StockListParams = {
   q?: string;
   category?: ProductCategory;
   status?: "all" | "low" | "out";
+  page?: string;
+  pageSize?: string;
 };
 
 export async function StockTable({ params }: { params: StockListParams }) {
   const q = params.q?.trim() ?? "";
   const category = params.category;
   const status = params.status ?? "all";
+  const pagination = readPagination(params);
 
   const schema = Prisma.raw(quoteIdentifier(getDatabaseConnection().schema));
   const qPattern = q ? `%${q}%` : null;
 
-  // Single query: products + latest movement via lateral join.
-  // Replaces the previous N+1 (one extra query per product for stockMovements take:1).
-  const rows = await prisma.$queryRaw<StockRow[]>`
-    SELECT
-      product.id::text          AS "id",
-      product.name              AS "name",
-      product.category::text    AS "category",
-      product.unit_name         AS "unitName",
-      product.current_stock::text AS "currentStock",
-      product.minimum_stock::text AS "minimumStock",
-      latest.movement_type::text AS "lastMovementType",
-      latest.occurred_at        AS "lastMovementAt"
-    FROM ${schema}.products product
-    LEFT JOIN LATERAL (
-      SELECT m.movement_type, m.occurred_at
-      FROM ${schema}.stock_movements m
-      WHERE m.product_id = product.id
-      ORDER BY m.occurred_at DESC
-      LIMIT 1
-    ) latest ON TRUE
+  const filters = Prisma.sql`
     WHERE product.is_active = TRUE
       ${qPattern ? Prisma.sql`AND product.name ILIKE ${qPattern}` : Prisma.empty}
       ${category ? Prisma.sql`AND product.category::text = ${category}` : Prisma.empty}
@@ -72,9 +58,42 @@ export async function StockTable({ params }: { params: StockListParams }) {
             ? Prisma.sql`AND product.current_stock <= product.minimum_stock`
             : Prisma.empty
       }
-    ORDER BY product.category ASC, product.name ASC
-    LIMIT 200
   `;
+
+  // Single query: products + latest movement via lateral join.
+  // Replaces the previous N+1 (one extra query per product for stockMovements take:1).
+  const [rows, totalRows] = await Promise.all([
+    prisma.$queryRaw<StockRow[]>`
+      SELECT
+        product.id::text          AS "id",
+        product.name              AS "name",
+        product.category::text    AS "category",
+        product.unit_name         AS "unitName",
+        product.current_stock::text AS "currentStock",
+        product.minimum_stock::text AS "minimumStock",
+        latest.movement_type::text AS "lastMovementType",
+        latest.occurred_at        AS "lastMovementAt"
+      FROM ${schema}.products product
+      LEFT JOIN LATERAL (
+        SELECT m.movement_type, m.occurred_at
+        FROM ${schema}.stock_movements m
+        WHERE m.product_id = product.id
+        ORDER BY m.occurred_at DESC
+        LIMIT 1
+      ) latest ON TRUE
+      ${filters}
+      ORDER BY product.category ASC, product.name ASC
+      LIMIT ${pagination.take} OFFSET ${pagination.skip}
+    `,
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT count(*)::bigint AS count
+      FROM ${schema}.products product
+      ${filters}
+    `,
+  ]);
+
+  const totalItems = Number(totalRows[0]?.count ?? BigInt(0));
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   if (!rows.length) {
     return (
@@ -136,6 +155,7 @@ export async function StockTable({ params }: { params: StockListParams }) {
           </tbody>
         </table>
       </div>
+      <PaginationBar {...meta} />
     </Section>
   );
 }

@@ -300,8 +300,8 @@ async function getInventoryMetrics(
   const aggregate = aggregateRows[0];
   return {
     inventoryValue: Number(aggregate?.inventoryValue ?? "0"),
-    lowStockCount: Number(aggregate?.lowStockCount ?? 0n),
-    outOfStockCount: Number(aggregate?.outOfStockCount ?? 0n),
+    lowStockCount: Number(aggregate?.lowStockCount ?? BigInt(0)),
+    outOfStockCount: Number(aggregate?.outOfStockCount ?? BigInt(0)),
     lowStockList: lowStockRows,
   };
 }

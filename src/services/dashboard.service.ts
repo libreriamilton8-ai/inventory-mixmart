@@ -49,11 +49,11 @@ export async function getDashboardTodayCounts(): Promise<DashboardTodayCounts> {
 
   const row = rows[0];
   return {
-    entriesToday: Number(row?.entriesToday ?? 0n),
-    outputsToday: Number(row?.outputsToday ?? 0n),
-    salesToday: Number(row?.salesToday ?? 0n),
-    wasteToday: Number(row?.wasteToday ?? 0n),
-    servicesToday: Number(row?.servicesToday ?? 0n),
+    entriesToday: Number(row?.entriesToday ?? BigInt(0)),
+    outputsToday: Number(row?.outputsToday ?? BigInt(0)),
+    salesToday: Number(row?.salesToday ?? BigInt(0)),
+    wasteToday: Number(row?.wasteToday ?? BigInt(0)),
+    servicesToday: Number(row?.servicesToday ?? BigInt(0)),
   };
 }
 
@@ -119,8 +119,8 @@ export async function getDashboardInventoryStats(): Promise<DashboardInventorySt
   const stats = statsRows[0];
   return {
     inventoryCost: Number(stats?.inventoryCost ?? "0"),
-    outOfStockCount: Number(stats?.outOfStockCount ?? 0n),
-    lowStockCount: Number(stats?.lowStockCount ?? 0n),
+    outOfStockCount: Number(stats?.outOfStockCount ?? BigInt(0)),
+    lowStockCount: Number(stats?.lowStockCount ?? BigInt(0)),
     attention: attentionRows,
   };
 }

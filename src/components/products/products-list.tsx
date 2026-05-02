@@ -4,6 +4,7 @@ import { ProductForm } from "@/components/products/product-form";
 import {
   DataTable,
   EmptyState,
+  PaginationBar,
   ProductCategoryBadge,
   RecordActions,
   RecordStatusBadge,
@@ -16,6 +17,7 @@ import {
   formatCurrency,
   formatDecimal,
 } from "@/lib/format";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import {
   deactivateProduct,
@@ -29,6 +31,8 @@ export type ProductsSearchParams = {
   q?: string;
   category?: ProductCategory;
   status?: "active" | "inactive" | "deleted";
+  page?: string;
+  pageSize?: string;
 };
 
 export async function ProductsList({
@@ -43,28 +47,37 @@ export async function ProductsList({
   const q = searchParams.q?.trim() ?? "";
   const category = searchParams.category;
   const status = searchParams.status ?? "active";
+  const pagination = readPagination(searchParams);
 
-  const products = await prisma.product.findMany({
-    where: {
-      ...(q
-        ? {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { sku: { contains: q, mode: "insensitive" } },
-              { barcode: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-      ...(category ? { category } : {}),
-      ...(status === "inactive"
-        ? { isActive: false }
-        : status === "deleted"
-          ? { deletedAt: { not: null } }
-          : { isActive: true }),
-    },
-    orderBy: [{ isActive: "desc" }, { name: "asc" }],
-    take: 100,
-  });
+  const where = {
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { sku: { contains: q, mode: "insensitive" as const } },
+            { barcode: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(category ? { category } : {}),
+    ...(status === "inactive"
+      ? { isActive: false }
+      : status === "deleted"
+        ? { deletedAt: { not: null } }
+        : { isActive: true }),
+  };
+
+  const [products, totalItems] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: [{ isActive: "desc" }, { name: "asc" }],
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   if (!products.length) {
     return (
@@ -89,7 +102,7 @@ export async function ProductsList({
 
   return (
     <Section>
-      <DataTable headers={headers}>
+      <DataTable headers={headers} containerClassName="overflow-x-auto">
         {products.map((product) => {
           const current = decimalToNumber(product.currentStock);
           const minimum = decimalToNumber(product.minimumStock);
@@ -164,6 +177,7 @@ export async function ProductsList({
           );
         })}
       </DataTable>
+      <PaginationBar {...meta} />
     </Section>
   );
 }

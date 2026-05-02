@@ -9,7 +9,10 @@
       "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue | ForEach-Object { try { $cmd = \\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.Id\\)\" -ErrorAction SilentlyContinue\\).CommandLine; \"$\\($_.Id\\): $cmd\" } catch {} })",
       "PowerShell(npx tsc --noEmit 2>&1 | Out-File -FilePath \"D:\\\\inventory-mixmart\\\\tsc-check.log\" -Encoding utf8; Get-Content \"D:\\\\inventory-mixmart\\\\tsc-check.log\" | Select-Object -First 80; \"---END---\"; \\(Get-Item \"D:\\\\inventory-mixmart\\\\tsc-check.log\"\\).Length)",
       "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" .\\\\node_modules\\\\typescript\\\\bin\\\\tsc --noEmit 2>&1 | Out-File -FilePath \"D:\\\\inventory-mixmart\\\\tsc-check.log\" -Encoding utf8; \"EXITCODE=$LASTEXITCODE\"; Get-Content \"D:\\\\inventory-mixmart\\\\tsc-check.log\" | Select-Object -First 120)",
-      "PowerShell(\"ok\")"
+      "PowerShell(\"ok\")",
+      "PowerShell(cmd /c \"cd /d D:\\\\inventory-mixmart && node node_modules\\\\typescript\\\\bin\\\\tsc --noEmit 2>&1\" 2>&1)",
+      "Read(//d/inventory-mixmart/**)",
+      "PowerShell(cmd /c \"cd /d D:\\\\inventory-mixmart && npm run db:seed:bulk 2>&1\" 2>&1)"
     ]
   }
 }

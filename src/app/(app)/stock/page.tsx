@@ -11,6 +11,8 @@ type StockSearchParams = {
   q?: string;
   category?: ProductCategory;
   status?: 'all' | 'low' | 'out';
+  page?: string;
+  pageSize?: string;
 };
 
 type StockPageProps = {
@@ -23,7 +25,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
   await requireActiveUser('/stock');
   const params = await searchParams;
 
-  const filterKey = `${params.q ?? ''}|${params.category ?? ''}|${params.status ?? ''}`;
+  const filterKey = `${params.q ?? ''}|${params.category ?? ''}|${params.status ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
 
   return (
     <div className="space-y-5">

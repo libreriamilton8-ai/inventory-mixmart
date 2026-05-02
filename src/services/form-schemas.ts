@@ -129,6 +129,13 @@ const serviceTypeSupplySchema = z.object({
   quantityPerUnit: positiveDecimal,
 });
 
+const serviceConsumptionSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: positiveDecimal,
+});
+
+export type ServiceConsumptionInput = z.infer<typeof serviceConsumptionSchema>;
+
 export type ProductInput = z.infer<typeof productSchema>;
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;
@@ -197,4 +204,18 @@ export function parseStockOutputItems(formData: FormData) {
 
 export function parseServiceTypeSupplies(formData: FormData) {
   return z.array(serviceTypeSupplySchema).parse(supplyItems(formData));
+}
+
+export function parseServiceConsumptions(formData: FormData) {
+  const productIds = formData.getAll("supplyProductId").map(String);
+  const quantities = formData.getAll("supplyQuantity").map(String);
+
+  const items = productIds
+    .map((productId, index) => ({
+      productId,
+      quantity: quantities[index] ?? "",
+    }))
+    .filter((item) => item.productId && item.quantity);
+
+  return z.array(serviceConsumptionSchema).parse(items);
 }

@@ -21,7 +21,7 @@ import {
   outputSchema,
   ownProfileUpdateSchema,
   parseForm,
-  parseServiceTypeSupplies,
+  parseServiceConsumptions,
   parseStockEntryItems,
   parseStockOutputItems,
   productSchema,
@@ -198,9 +198,8 @@ export async function createStockOutput(formData: FormData) {
 export async function createServiceType(formData: FormData) {
   await requireRole(adminOnly, "/services");
   const data = parseForm(serviceTypeSchema, formData);
-  const supplies = parseServiceTypeSupplies(formData);
 
-  await createServiceTypeRecord({ data, supplies });
+  await createServiceTypeRecord({ data });
   revalidatePath("/services");
   redirect("/services?success=type");
 }
@@ -226,11 +225,13 @@ export async function restoreServiceType(formData: FormData) {
 export async function createServiceRecord(formData: FormData) {
   const user = await requireRole(OPERATIONAL_ROLES, "/services");
   const data = parseForm(serviceRecordSchema, formData);
+  const consumptions = parseServiceConsumptions(formData);
 
   try {
     await createServiceWorkRecord({
       createdById: user.id,
       data,
+      consumptions,
     });
   } catch (error) {
     if (isInsufficientStockError(error)) {

@@ -19,7 +19,7 @@ import {
   TableSkeleton,
 } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
-import { serviceKindLabels } from "@/lib/format";
+import { formatDecimal, serviceKindLabels } from "@/lib/format";
 import { requireActiveUser } from "@/lib/auth";
 import { canManageCatalog } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
@@ -44,13 +44,13 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         },
       },
       orderBy: [{ kind: "asc" }, { name: "asc" }],
-      take: 100,
+      take: 200,
     }),
     prisma.product.findMany({
       where: { isActive: true },
       select: { id: true, name: true, unitName: true, currentStock: true },
       orderBy: { name: "asc" },
-      take: 300,
+      take: 1000,
     }),
   ]);
 
@@ -60,12 +60,26 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
     (type) => type.kind === "OUTSOURCED",
   );
 
+  const consumptionProducts = products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    unitName: product.unitName,
+    currentStock: formatDecimal(product.currentStock, 3),
+  }));
+
+  // Plain-object projection so the client form doesn't receive Prisma Decimals.
+  const serviceTypeOptionsForForm = serviceTypes.map((type) => ({
+    id: type.id,
+    name: type.name,
+    kind: type.kind,
+  }));
+
   const serviceTypeOptions = serviceTypes.map((type) => ({
     label: `${type.name} - ${serviceKindLabels[type.kind]}`,
     value: type.id,
   }));
 
-  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.kind ?? ""}|${params.status ?? ""}|${params.serviceTypeId ?? ""}`;
+  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.kind ?? ""}|${params.status ?? ""}|${params.serviceTypeId ?? ""}|${params.page ?? ""}|${params.pageSize ?? ""}`;
 
   return (
     <div className="space-y-5">
@@ -83,14 +97,17 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
                 </>
               }
             >
-              <ServiceRecordForm serviceTypes={serviceTypes} />
+              <ServiceRecordForm
+                serviceTypes={serviceTypeOptionsForForm}
+                products={consumptionProducts}
+              />
             </FormModal>
 
             {canManage ? (
               <FormModal
-                size="xl"
+                size="lg"
                 title="Nuevo tipo de servicio"
-                description="Define un servicio reutilizable con sus insumos."
+                description="Define un servicio reutilizable. Los insumos se eligen al registrar cada servicio."
                 triggerClassName="btn-soft"
                 trigger={
                   <>
@@ -99,7 +116,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
                   </>
                 }
               >
-                <ServiceTypeForm products={products} />
+                <ServiceTypeForm />
               </FormModal>
             ) : null}
           </div>

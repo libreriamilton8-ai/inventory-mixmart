@@ -4,6 +4,7 @@ import {
   DataTable,
   EmptyState,
   IdActionForm,
+  PaginationBar,
   Section,
   StatusBadge,
 } from "@/components/shared";
@@ -14,6 +15,7 @@ import {
   formatDecimal,
   stockEntryStatusLabels,
 } from "@/lib/format";
+import { buildPaginationMeta, readPagination } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { receiveStockEntry } from "@/server/actions";
 import type { StockEntryStatus } from "../../../prisma/generated/client";
@@ -24,6 +26,8 @@ export type EntriesSearchParams = {
   to?: string;
   status?: StockEntryStatus;
   supplierId?: string;
+  page?: string;
+  pageSize?: string;
 };
 
 export async function EntriesList({
@@ -33,28 +37,37 @@ export async function EntriesList({
 }) {
   const q = searchParams.q?.trim();
   const orderedAtFilter = dateRangeWhere(searchParams.from, searchParams.to);
+  const pagination = readPagination(searchParams);
 
-  const entries = await prisma.stockEntry.findMany({
-    where: {
-      ...(orderedAtFilter ? { orderedAt: orderedAtFilter } : {}),
-      ...(searchParams.status ? { status: searchParams.status } : {}),
-      ...(searchParams.supplierId ? { supplierId: searchParams.supplierId } : {}),
-      ...(q
-        ? { referenceNumber: { contains: q, mode: "insensitive" as const } }
-        : {}),
-    },
-    include: {
-      supplier: { select: { name: true } },
-      createdBy: { select: { firstName: true, lastName: true } },
-      items: {
-        include: {
-          product: { select: { name: true, unitName: true } },
+  const where = {
+    ...(orderedAtFilter ? { orderedAt: orderedAtFilter } : {}),
+    ...(searchParams.status ? { status: searchParams.status } : {}),
+    ...(searchParams.supplierId ? { supplierId: searchParams.supplierId } : {}),
+    ...(q
+      ? { referenceNumber: { contains: q, mode: "insensitive" as const } }
+      : {}),
+  };
+
+  const [entries, totalItems] = await Promise.all([
+    prisma.stockEntry.findMany({
+      where,
+      include: {
+        supplier: { select: { name: true } },
+        createdBy: { select: { firstName: true, lastName: true } },
+        items: {
+          include: {
+            product: { select: { name: true, unitName: true } },
+          },
         },
       },
-    },
-    orderBy: { orderedAt: "desc" },
-    take: 100,
-  });
+      orderBy: { orderedAt: "desc" },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.stockEntry.count({ where }),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   if (!entries.length) {
     return (
@@ -137,6 +150,7 @@ export async function EntriesList({
           </tr>
         ))}
       </DataTable>
+      <PaginationBar {...meta} />
     </Section>
   );
 }

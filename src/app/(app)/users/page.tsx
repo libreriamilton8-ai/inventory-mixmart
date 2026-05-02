@@ -7,6 +7,7 @@ import {
   FlashMessage,
   OperationalPageSkeleton,
   PageHeader,
+  PaginationBar,
   Section,
   StatusBadge,
   SubmitButton,
@@ -15,6 +16,7 @@ import { UserForm } from '@/components/users/user-form';
 import { FormModal } from '@/components/ui/modal';
 import { formatDate, roleLabels } from '@/lib/format';
 import { requireRole } from '@/lib/auth';
+import { buildPaginationMeta, readPagination } from '@/lib/pagination';
 import prisma from '@/lib/prisma';
 import { setUserActive } from '@/server/actions';
 
@@ -22,6 +24,8 @@ type UsersPageProps = {
   searchParams: Promise<{
     success?: string;
     error?: string;
+    page?: string;
+    pageSize?: string;
   }>;
 };
 
@@ -36,10 +40,18 @@ export default function UsersPage({ searchParams }: UsersPageProps) {
 async function UsersContent({ searchParams }: UsersPageProps) {
   await requireRole(['ADMIN'], '/users');
   const params = await searchParams;
-  const users = await prisma.user.findMany({
-    orderBy: [{ isActive: 'desc' }, { lastName: 'asc' }, { firstName: 'asc' }],
-    take: 150,
-  });
+  const pagination = readPagination(params);
+
+  const [users, totalItems] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: [{ isActive: 'desc' }, { lastName: 'asc' }, { firstName: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.user.count(),
+  ]);
+
+  const meta = buildPaginationMeta(totalItems, pagination);
 
   return (
     <div>
@@ -137,6 +149,7 @@ async function UsersContent({ searchParams }: UsersPageProps) {
         ) : (
           <EmptyState title="Sin usuarios" />
         )}
+        <PaginationBar {...meta} />
       </Section>
     </div>
   );

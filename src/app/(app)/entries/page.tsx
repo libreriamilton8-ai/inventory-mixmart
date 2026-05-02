@@ -26,29 +26,43 @@ type EntriesPageProps = {
 };
 
 export default async function EntriesPage({ searchParams }: EntriesPageProps) {
-  const [, params, suppliers, products] = await Promise.all([
+  const [, params, suppliers, productsRaw] = await Promise.all([
     requireActiveUser("/entries"),
     searchParams,
     prisma.supplier.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
-      take: 200,
+      take: 500,
     }),
     prisma.product.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, unitName: true },
-      take: 300,
+      select: {
+        id: true,
+        name: true,
+        unitName: true,
+        category: true,
+        purchasePrice: true,
+      },
+      take: 1000,
     }),
   ]);
+
+  const products = productsRaw.map((product) => ({
+    id: product.id,
+    name: product.name,
+    unitName: product.unitName,
+    category: product.category,
+    purchasePrice: product.purchasePrice ? String(product.purchasePrice) : null,
+  }));
 
   const supplierOptions = suppliers.map((supplier) => ({
     label: supplier.name,
     value: supplier.id,
   }));
 
-  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.q ?? ""}|${params.status ?? ""}|${params.supplierId ?? ""}`;
+  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.q ?? ""}|${params.status ?? ""}|${params.supplierId ?? ""}|${params.page ?? ""}|${params.pageSize ?? ""}`;
 
   return (
     <div className="space-y-5">
