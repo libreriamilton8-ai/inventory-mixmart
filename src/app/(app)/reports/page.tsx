@@ -18,9 +18,11 @@ import {
   sumLineCost,
   sumLineRevenue,
 } from "@/lib/calc";
-import { decimalToNumber, formatCurrency, productCategoryLabels } from "@/lib/format";
+import { getDatabaseConnection } from "@/lib/database-url";
+import { formatCurrency, productCategoryLabels } from "@/lib/format";
 import { requireRole } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { Prisma } from "../../../../prisma/generated/client";
 import type { ProductCategory } from "../../../../prisma/generated/client";
 
 type ReportsPageProps = {
@@ -44,8 +46,10 @@ export default function ReportsPage({ searchParams }: ReportsPageProps) {
 }
 
 async function ReportsContent({ searchParams }: ReportsPageProps) {
-  await requireRole(["ADMIN"], "/reports");
-  const params = await searchParams;
+  const [, params] = await Promise.all([
+    requireRole(["ADMIN"], "/reports"),
+    searchParams,
+  ]);
   const fallback = defaultRangeStrings(30);
   const from = params.from ?? fallback.from;
   const to = params.to ?? fallback.to;
@@ -54,27 +58,31 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
   const productId = params.productId || undefined;
   const supplierId = params.supplierId || undefined;
 
-  const [products, suppliers] = await Promise.all([
+  // Fetch only the columns needed for the dropdowns. Inventory metrics
+  // (value, low/out counts) are computed in the DB to avoid transferring
+  // 500+ Decimal rows just to sum/filter them in JS.
+  const [
+    productOptions,
+    supplierOptions,
+    inventoryMetrics,
+    movements,
+    entries,
+    outputs,
+    services,
+  ] = await Promise.all([
     prisma.product.findMany({
+      where: { isActive: true, ...(category ? { category } : {}) },
       orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        currentStock: true,
-        minimumStock: true,
-        purchasePrice: true,
-      },
+      select: { id: true, name: true },
       take: 500,
     }),
     prisma.supplier.findMany({
+      where: { isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
       take: 300,
     }),
-  ]);
-
-  const [movements, entries, outputs, services] = await Promise.all([
+    getInventoryMetrics(category),
     prisma.stockMovement.findMany({
       where: {
         ...(dateFilter ? { occurredAt: dateFilter } : {}),
@@ -131,24 +139,6 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
     }),
   ]);
 
-  const filteredProducts = products.filter(
-    (product) => !category || product.category === category,
-  );
-  const lowStock = filteredProducts.filter(
-    (product) =>
-      decimalToNumber(product.currentStock) <=
-      decimalToNumber(product.minimumStock),
-  );
-  const outOfStock = filteredProducts.filter(
-    (product) => decimalToNumber(product.currentStock) <= 0,
-  );
-  const inventoryValue = filteredProducts.reduce(
-    (sum, product) =>
-      sum +
-      decimalToNumber(product.currentStock) *
-        decimalToNumber(product.purchasePrice),
-    0,
-  );
   const purchaseTotal = entries.reduce(
     (sum, entry) => sum + sumLineCost(entry.items),
     0,
@@ -186,7 +176,7 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
           allLabel="Todos"
           label="Producto"
           name="productId"
-          options={products.map((product) => ({
+          options={productOptions.map((product) => ({
             label: product.name,
             value: product.id,
           }))}
@@ -195,7 +185,7 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
           allLabel="Todos"
           label="Proveedor"
           name="supplierId"
-          options={suppliers.map((supplier) => ({
+          options={supplierOptions.map((supplier) => ({
             label: supplier.name,
             value: supplier.id,
           }))}
@@ -205,7 +195,7 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
       <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ReportMetric
           label="Valor inventario"
-          value={formatCurrency(inventoryValue)}
+          value={formatCurrency(inventoryMetrics.inventoryValue)}
         />
         <ReportMetric label="Compras periodo" value={formatCurrency(purchaseTotal)} />
         <ReportMetric label="Ingresos ventas" value={formatCurrency(saleRevenue)} />
@@ -216,14 +206,20 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
       </div>
 
       <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <ReportMetric label="Bajo stock" value={String(lowStock.length)} />
-        <ReportMetric label="Sin stock" value={String(outOfStock.length)} />
+        <ReportMetric
+          label="Bajo stock"
+          value={String(inventoryMetrics.lowStockCount)}
+        />
+        <ReportMetric
+          label="Sin stock"
+          value={String(inventoryMetrics.outOfStockCount)}
+        />
         <ReportMetric label="Costo salidas" value={formatCurrency(outputCost)} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <MovementsTable movements={movements} />
-        <LowStockTable products={lowStock} />
+        <LowStockTable products={inventoryMetrics.lowStockList} />
         <ReportsEntriesTable entries={entries} />
         <ReportsOutputsTable outputs={outputs} />
       </div>
@@ -231,4 +227,81 @@ async function ReportsContent({ searchParams }: ReportsPageProps) {
       <ReportsServicesTable services={services} />
     </div>
   );
+}
+
+type InventoryMetrics = {
+  inventoryValue: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  lowStockList: {
+    id: string;
+    name: string;
+    category: ProductCategory;
+    currentStock: string;
+    minimumStock: string;
+    purchasePrice: string;
+  }[];
+};
+
+function quoteIdentifier(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+async function getInventoryMetrics(
+  category: ProductCategory | undefined,
+): Promise<InventoryMetrics> {
+  const schema = Prisma.raw(quoteIdentifier(getDatabaseConnection().schema));
+  const categoryFilter = category
+    ? Prisma.sql`AND category::text = ${category}`
+    : Prisma.empty;
+
+  const [aggregateRows, lowStockRows] = await Promise.all([
+    prisma.$queryRaw<
+      {
+        inventoryValue: string | null;
+        outOfStockCount: bigint;
+        lowStockCount: bigint;
+      }[]
+    >`
+      SELECT
+        coalesce(sum(current_stock * purchase_price), 0)::text AS "inventoryValue",
+        count(*) FILTER (WHERE current_stock <= 0) AS "outOfStockCount",
+        count(*) FILTER (WHERE current_stock <= minimum_stock) AS "lowStockCount"
+      FROM ${schema}.products
+      WHERE is_active = TRUE
+      ${categoryFilter}
+    `,
+    prisma.$queryRaw<
+      {
+        id: string;
+        name: string;
+        category: ProductCategory;
+        currentStock: string;
+        minimumStock: string;
+        purchasePrice: string;
+      }[]
+    >`
+      SELECT
+        id::text                AS "id",
+        name                    AS "name",
+        category::text          AS "category",
+        current_stock::text     AS "currentStock",
+        minimum_stock::text     AS "minimumStock",
+        purchase_price::text    AS "purchasePrice"
+      FROM ${schema}.products
+      WHERE is_active = TRUE
+        AND current_stock <= minimum_stock
+        ${categoryFilter}
+      ORDER BY current_stock ASC, name ASC
+      LIMIT 50
+    `,
+  ]);
+
+  const aggregate = aggregateRows[0];
+  return {
+    inventoryValue: Number(aggregate?.inventoryValue ?? "0"),
+    lowStockCount: Number(aggregate?.lowStockCount ?? 0n),
+    outOfStockCount: Number(aggregate?.outOfStockCount ?? 0n),
+    lowStockList: lowStockRows,
+  };
 }

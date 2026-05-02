@@ -8,6 +8,123 @@ import type {
   StockMovementType,
 } from "../../prisma/generated/client";
 
+export type DashboardTodayCounts = {
+  entriesToday: number;
+  outputsToday: number;
+  salesToday: number;
+  wasteToday: number;
+  servicesToday: number;
+};
+
+export async function getDashboardTodayCounts(): Promise<DashboardTodayCounts> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const schema = Prisma.raw(quoteIdentifier(getDatabaseConnection().schema));
+  const rows = await prisma.$queryRaw<
+    {
+      entriesToday: bigint;
+      outputsToday: bigint;
+      salesToday: bigint;
+      wasteToday: bigint;
+      servicesToday: bigint;
+    }[]
+  >`
+    SELECT
+      (SELECT count(*) FROM ${schema}.stock_entries
+        WHERE created_at BETWEEN ${todayStart} AND ${todayEnd}) AS "entriesToday",
+      (SELECT count(*) FROM ${schema}.stock_outputs
+        WHERE occurred_at BETWEEN ${todayStart} AND ${todayEnd}) AS "outputsToday",
+      (SELECT count(*) FROM ${schema}.stock_outputs
+        WHERE occurred_at BETWEEN ${todayStart} AND ${todayEnd}
+          AND reason = 'SALE') AS "salesToday",
+      (SELECT count(*) FROM ${schema}.stock_outputs
+        WHERE occurred_at BETWEEN ${todayStart} AND ${todayEnd}
+          AND reason = 'WASTE') AS "wasteToday",
+      (SELECT count(*) FROM ${schema}.service_records
+        WHERE service_date BETWEEN ${todayStart} AND ${todayEnd}) AS "servicesToday"
+  `;
+
+  const row = rows[0];
+  return {
+    entriesToday: Number(row?.entriesToday ?? 0n),
+    outputsToday: Number(row?.outputsToday ?? 0n),
+    salesToday: Number(row?.salesToday ?? 0n),
+    wasteToday: Number(row?.wasteToday ?? 0n),
+    servicesToday: Number(row?.servicesToday ?? 0n),
+  };
+}
+
+export type DashboardInventoryStats = {
+  inventoryCost: number;
+  outOfStockCount: number;
+  lowStockCount: number;
+  attention: {
+    id: string;
+    name: string;
+    sku: string | null;
+    currentStock: string;
+    minimumStock: string;
+    status: "out" | "low";
+  }[];
+};
+
+export async function getDashboardInventoryStats(): Promise<DashboardInventoryStats> {
+  const schema = Prisma.raw(quoteIdentifier(getDatabaseConnection().schema));
+
+  const [statsRows, attentionRows] = await Promise.all([
+    prisma.$queryRaw<
+      {
+        inventoryCost: string | null;
+        outOfStockCount: bigint;
+        lowStockCount: bigint;
+      }[]
+    >`
+      SELECT
+        coalesce(sum(current_stock * purchase_price), 0)::text AS "inventoryCost",
+        count(*) FILTER (WHERE current_stock <= 0) AS "outOfStockCount",
+        count(*) FILTER (WHERE current_stock > 0 AND current_stock <= minimum_stock) AS "lowStockCount"
+      FROM ${schema}.products
+      WHERE is_active = TRUE
+    `,
+    prisma.$queryRaw<
+      {
+        id: string;
+        name: string;
+        sku: string | null;
+        currentStock: string;
+        minimumStock: string;
+        status: "out" | "low";
+      }[]
+    >`
+      SELECT
+        id::text                  AS "id",
+        name                      AS "name",
+        sku                       AS "sku",
+        current_stock::text       AS "currentStock",
+        minimum_stock::text       AS "minimumStock",
+        CASE WHEN current_stock <= 0 THEN 'out' ELSE 'low' END AS "status"
+      FROM ${schema}.products
+      WHERE is_active = TRUE
+        AND current_stock <= minimum_stock
+      ORDER BY
+        CASE WHEN current_stock <= 0 THEN 0 ELSE 1 END,
+        name ASC
+      LIMIT 4
+    `,
+  ]);
+
+  const stats = statsRows[0];
+  return {
+    inventoryCost: Number(stats?.inventoryCost ?? "0"),
+    outOfStockCount: Number(stats?.outOfStockCount ?? 0n),
+    lowStockCount: Number(stats?.lowStockCount ?? 0n),
+    attention: attentionRows,
+  };
+}
+
 export type DashboardFinancialSummary = {
   grossProfit: number;
   rangeDetail: string;
