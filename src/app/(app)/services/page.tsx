@@ -1,28 +1,20 @@
-import { Plus } from "lucide-react";
-import { Suspense } from "react";
+import { Plus } from 'lucide-react';
+import { Suspense } from 'react';
 
-import {
-  DateRangeFilter,
-  FilterBar,
-  SelectFilter,
-} from "@/components/filters";
-import { ServiceRecordForm } from "@/components/services/service-record-form";
-import { ServiceTypeForm } from "@/components/services/service-type-form";
-import { ServiceTypeList } from "@/components/services/service-type-list";
+import { DateRangeFilter, FilterBar, SelectFilter } from '@/components/filters';
+import { ServiceRecordForm } from '@/components/services/service-record-form';
+import { ServiceTypeForm } from '@/components/services/service-type-form';
+import { ServiceTypeList } from '@/components/services/service-type-list';
 import {
   ServicesList,
   type ServicesSearchParams,
-} from "@/components/services/services-list";
-import {
-  FlashMessage,
-  PageHeader,
-  TableSkeleton,
-} from "@/components/shared";
-import { FormModal } from "@/components/ui/modal";
-import { formatDecimal, serviceKindLabels } from "@/lib/format";
-import { requireActiveUser } from "@/lib/auth";
-import { canManageCatalog } from "@/lib/permissions";
-import prisma from "@/lib/prisma";
+} from '@/components/services/services-list';
+import { FlashMessage, PageHeader, TableSkeleton } from '@/components/shared';
+import { FormModal } from '@/components/ui/modal';
+import { formatDecimal, serviceKindLabels } from '@/lib/format';
+import { requireActiveUser } from '@/lib/auth';
+import { canManageCatalog } from '@/lib/permissions';
+import prisma from '@/lib/prisma';
 
 type ServicesPageProps = {
   searchParams: Promise<
@@ -30,9 +22,11 @@ type ServicesPageProps = {
   >;
 };
 
-export default async function ServicesPage({ searchParams }: ServicesPageProps) {
+export default async function ServicesPage({
+  searchParams,
+}: ServicesPageProps) {
   const [user, params, serviceTypes, products] = await Promise.all([
-    requireActiveUser("/services"),
+    requireActiveUser('/services'),
     searchParams,
     prisma.serviceType.findMany({
       where: { isActive: true },
@@ -43,21 +37,21 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
           },
         },
       },
-      orderBy: [{ kind: "asc" }, { name: "asc" }],
+      orderBy: [{ kind: 'asc' }, { name: 'asc' }],
       take: 200,
     }),
     prisma.product.findMany({
       where: { isActive: true },
       select: { id: true, name: true, unitName: true, currentStock: true },
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       take: 1000,
     }),
   ]);
 
   const canManage = canManageCatalog(user.role);
-  const inHouseTypes = serviceTypes.filter((type) => type.kind === "IN_HOUSE");
+  const inHouseTypes = serviceTypes.filter((type) => type.kind === 'IN_HOUSE');
   const outsourcedTypes = serviceTypes.filter(
-    (type) => type.kind === "OUTSOURCED",
+    (type) => type.kind === 'OUTSOURCED',
   );
 
   const consumptionProducts = products.map((product) => ({
@@ -79,7 +73,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
     value: type.id,
   }));
 
-  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.kind ?? ""}|${params.status ?? ""}|${params.serviceTypeId ?? ""}|${params.page ?? ""}|${params.pageSize ?? ""}`;
+  const filterKey = `${params.from ?? ''}|${params.to ?? ''}|${params.kind ?? ''}|${params.status ?? ''}|${params.serviceTypeId ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
 
   return (
     <div className="space-y-5">
@@ -124,26 +118,15 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
       />
 
       {params.success ? (
-        <FlashMessage type="success">Servicio guardado correctamente.</FlashMessage>
+        <FlashMessage type="success">
+          Servicio guardado correctamente.
+        </FlashMessage>
       ) : null}
-      {params.error === "stock" ? (
+      {params.error === 'stock' ? (
         <FlashMessage type="error">
           Stock insuficiente para consumir insumos.
         </FlashMessage>
       ) : null}
-
-      <div className="grid gap-5 xl:grid-cols-2">
-        <ServiceTypeList
-          canManage={canManage}
-          title="Servicios internos"
-          types={inHouseTypes}
-        />
-        <ServiceTypeList
-          canManage={canManage}
-          title="Servicios tercerizados"
-          types={outsourcedTypes}
-        />
-      </div>
 
       <FilterBar>
         <DateRangeFilter label="Periodo de servicio" />
@@ -152,8 +135,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
           label="Tipo"
           name="kind"
           options={[
-            { label: "Interno", value: "IN_HOUSE" },
-            { label: "Tercerizado", value: "OUTSOURCED" },
+            { label: 'Interno', value: 'IN_HOUSE' },
+            { label: 'Tercerizado', value: 'OUTSOURCED' },
           ]}
         />
         <SelectFilter
@@ -161,11 +144,11 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
           label="Estado"
           name="status"
           options={[
-            { label: "Recibido", value: "RECEIVED" },
-            { label: "En proceso", value: "IN_PROGRESS" },
-            { label: "Completado", value: "COMPLETED" },
-            { label: "Entregado", value: "DELIVERED" },
-            { label: "Cancelado", value: "CANCELLED" },
+            { label: 'Recibido', value: 'RECEIVED' },
+            { label: 'En proceso', value: 'IN_PROGRESS' },
+            { label: 'Completado', value: 'COMPLETED' },
+            { label: 'Entregado', value: 'DELIVERED' },
+            { label: 'Cancelado', value: 'CANCELLED' },
           ]}
         />
         <SelectFilter
@@ -182,6 +165,19 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
       >
         <ServicesList searchParams={params} />
       </Suspense>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <ServiceTypeList
+          canManage={canManage}
+          title="Servicios internos"
+          types={inHouseTypes}
+        />
+        <ServiceTypeList
+          canManage={canManage}
+          title="Servicios tercerizados"
+          types={outsourcedTypes}
+        />
+      </div>
     </div>
   );
 }

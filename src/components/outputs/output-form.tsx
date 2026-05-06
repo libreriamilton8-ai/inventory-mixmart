@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react';
 
 import {
   OutputLineItems,
   type OutputProductOption,
-} from "@/components/outputs/output-line-items";
-import { SubmitButton } from "@/components/shared";
-import { createStockOutput } from "@/server/actions";
+} from '@/components/outputs/output-line-items';
+import { SubmitButton } from '@/components/shared';
+import { createStockOutput } from '@/server/actions';
 
 type OutputFormProps = {
   products: OutputProductOption[];
@@ -18,10 +18,7 @@ export function OutputForm({ products }: OutputFormProps) {
     <form action={createStockOutput} className="space-y-5 p-4 md:p-5">
       <OutputLineItems products={products} />
 
-      <div className="flex flex-col gap-3 rounded-card border border-border bg-surface-muted p-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">
-          La salida actualizara el stock cuando el servidor confirme la operacion.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end">
         <SubmitButton className="btn btn-primary sm:w-auto">
           <Plus aria-hidden="true" className="h-4 w-4" />
           Registrar salida

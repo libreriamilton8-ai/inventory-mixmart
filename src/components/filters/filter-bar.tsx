@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { RotateCcw, Search } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { RotateCcw, Search } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   createContext,
   useCallback,
@@ -11,12 +11,12 @@ import {
   useRef,
   useTransition,
   type ReactNode,
-} from "react";
+} from 'react';
 
-import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { Select } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
-import { DateRangePicker } from "./date-range-picker";
+import { DateRangePicker } from './date-range-picker';
 
 type ParamValue = string | undefined;
 
@@ -70,7 +70,7 @@ export function FilterBar({ children, className }: FilterBarProps) {
   const setParam = useCallback(
     (key: string, value: ParamValue) => {
       const next = new URLSearchParams(searchParams.toString());
-      if (value === undefined || value === "") {
+      if (value === undefined || value === '') {
         next.delete(key);
       } else {
         next.set(key, value);
@@ -84,7 +84,7 @@ export function FilterBar({ children, className }: FilterBarProps) {
     (entries: Record<string, ParamValue>) => {
       const next = new URLSearchParams(searchParams.toString());
       Object.entries(entries).forEach(([key, value]) => {
-        if (value === undefined || value === "") {
+        if (value === undefined || value === '') {
           next.delete(key);
         } else {
           next.set(key, value);
@@ -101,7 +101,7 @@ export function FilterBar({ children, className }: FilterBarProps) {
   );
 
   const hasActiveFilters = Object.keys(values).some(
-    (key) => values[key] && key !== "success" && key !== "error",
+    (key) => values[key] && key !== 'success' && key !== 'error',
   );
 
   return (
@@ -109,7 +109,7 @@ export function FilterBar({ children, className }: FilterBarProps) {
       <section
         aria-label="Filtros"
         className={cn(
-          "flex flex-wrap items-center gap-2 rounded-control  px-2.5 pt-2 md:pt-4 shadow-soft",
+          'flex flex-wrap items-center gap-2 rounded-control  px-2.5 pt-2 md:pt-4 shadow-soft',
           className,
         )}
       >
@@ -121,23 +121,22 @@ export function FilterBar({ children, className }: FilterBarProps) {
               className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"
             />
           ) : null}
-          {hasActiveFilters ? (
-            <button
-              className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted-foreground transition hover:border-error/30 hover:bg-error-surface hover:text-error"
-              onClick={() => {
-                const preserved = new URLSearchParams();
-                ["success", "error"].forEach((key) => {
-                  const value = values[key];
-                  if (value) preserved.set(key, value);
-                });
-                replace(preserved);
-              }}
-              type="button"
-            >
-              <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
-              Limpiar
-            </button>
-          ) : null}
+          <button
+            disabled={!hasActiveFilters}
+            className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted-foreground transition hover:border-error/30 hover:bg-error-surface hover:text-error"
+            onClick={() => {
+              const preserved = new URLSearchParams();
+              ['success', 'error'].forEach((key) => {
+                const value = values[key];
+                if (value) preserved.set(key, value);
+              });
+              replace(preserved);
+            }}
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
+            Limpiar
+          </button>
         </div>
       </section>
     </FilterContext.Provider>
@@ -153,12 +152,12 @@ type SearchFilterProps = {
 
 export function SearchFilter({
   className,
-  label = "Buscar",
+  label = 'Buscar',
   name,
   placeholder,
 }: SearchFilterProps) {
-  const { setParam, values } = useFilterContext("SearchFilter");
-  const initial = values[name] ?? "";
+  const { setParam, values } = useFilterContext('SearchFilter');
+  const initial = values[name] ?? '';
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -180,7 +179,7 @@ export function SearchFilter({
   return (
     <div
       className={cn(
-        "relative min-w-0 flex-1 basis-full sm:basis-auto sm:w-60",
+        'relative min-w-0 flex-1 basis-full sm:basis-auto sm:w-60',
         className,
       )}
     >
@@ -224,17 +223,22 @@ type SelectFilterProps = {
 };
 
 export function SelectFilter({
-  allLabel = "Todos",
+  allLabel = 'Todos',
   className,
   label,
   name,
   options,
 }: SelectFilterProps) {
-  const { setParam, values } = useFilterContext("SelectFilter");
-  const value = values[name] ?? "";
+  const { setParam, values } = useFilterContext('SelectFilter');
+  const value = values[name] ?? '';
 
   return (
-    <div className={cn("min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:basis-auto sm:w-44", className)}>
+    <div
+      className={cn(
+        'min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:basis-auto sm:w-44',
+        className,
+      )}
+    >
       <Select
         aria-label={label}
         className="h-9 min-h-9 gap-2 px-2.5 py-1.5 text-sm font-normal"
@@ -269,17 +273,22 @@ export function DateRangeFilter({
   className,
   fallbackFromValue,
   fallbackToValue,
-  fromName = "from",
-  label = "Periodo",
+  fromName = 'from',
+  label = 'Periodo',
   placeholder,
-  toName = "to",
+  toName = 'to',
 }: DateRangeFilterProps) {
-  const { setMany, values } = useFilterContext("DateRangeFilter");
-  const fromValue = values[fromName] ?? fallbackFromValue ?? "";
-  const toValue = values[toName] ?? fallbackToValue ?? "";
+  const { setMany, values } = useFilterContext('DateRangeFilter');
+  const fromValue = values[fromName] ?? fallbackFromValue ?? '';
+  const toValue = values[toName] ?? fallbackToValue ?? '';
 
   return (
-    <div className={cn("min-w-0 flex-1 basis-full sm:basis-auto sm:w-64", className)}>
+    <div
+      className={cn(
+        'min-w-0 flex-1 basis-full sm:basis-auto sm:w-64',
+        className,
+      )}
+    >
       <DateRangePicker
         allowClear={allowClear}
         ariaLabel={label}

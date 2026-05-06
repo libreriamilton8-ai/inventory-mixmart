@@ -1,13 +1,13 @@
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react';
 
-import { Field } from "@/components/forms";
-import { SubmitButton } from "@/components/shared";
-import { Select } from "@/components/ui/select";
-import { productCategoryLabels } from "@/lib/format";
-import { createProduct, updateProduct } from "@/server/actions";
-import type { ProductCategory } from "../../../prisma/generated/client";
+import { Field } from '@/components/forms';
+import { SubmitButton } from '@/components/shared';
+import { Select } from '@/components/ui/select';
+import { productCategoryLabels } from '@/lib/format';
+import { createProduct, updateProduct } from '@/server/actions';
+import type { ProductCategory } from '../../../prisma/generated/client';
 
-const categories: ProductCategory[] = ["SCHOOL_SUPPLIES", "BAZAAR", "SNACKS"];
+const categories: ProductCategory[] = ['SCHOOL_SUPPLIES', 'BAZAAR', 'SNACKS'];
 
 export type ProductFormValues = {
   id: string;
@@ -50,7 +50,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           </Field>
           <Field label="Categoria">
             <Select
-              defaultValue={product?.category ?? "SCHOOL_SUPPLIES"}
+              defaultValue={product?.category ?? 'SCHOOL_SUPPLIES'}
               name="category"
             >
               {categories.map((item) => (
@@ -71,7 +71,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="SKU interno">
             <input
               className="input"
-              defaultValue={product?.sku ?? ""}
+              defaultValue={product?.sku ?? ''}
               name="sku"
               placeholder="Ej. CUA-A4-100"
             />
@@ -79,7 +79,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="Codigo barras">
             <input
               className="input"
-              defaultValue={product?.barcode ?? ""}
+              defaultValue={product?.barcode ?? ''}
               name="barcode"
               placeholder="EAN/UPC del producto"
             />
@@ -87,7 +87,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="Unidad">
             <input
               className="input"
-              defaultValue={product?.unitName ?? "unidad"}
+              defaultValue={product?.unitName ?? 'unidad'}
               name="unitName"
               placeholder="unidad, paquete, kg..."
               required
@@ -104,7 +104,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="Costo de compra">
             <input
               className="input"
-              defaultValue={product?.purchasePrice?.toString() ?? "0"}
+              defaultValue={product?.purchasePrice?.toString() ?? '0'}
               min="0"
               name="purchasePrice"
               placeholder="0.00"
@@ -116,7 +116,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="Venta sugerida">
             <input
               className="input"
-              defaultValue={product?.salePrice?.toString() ?? ""}
+              defaultValue={product?.salePrice?.toString() ?? ''}
               min="0"
               name="salePrice"
               placeholder="Opcional"
@@ -127,7 +127,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <Field label="Stock minimo">
             <input
               className="input"
-              defaultValue={product?.minimumStock?.toString() ?? "0"}
+              defaultValue={product?.minimumStock?.toString() ?? '0'}
               min="0"
               name="minimumStock"
               placeholder="0"
@@ -138,24 +138,24 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           </Field>
         </div>
         <p className="rounded-control border border-border bg-surface-muted px-3 py-2 text-[11.5px] text-muted-foreground">
-          Estos precios se autocompletan al registrar entradas o salidas.
-          Puedes ajustarlos en cada operacion sin tocar el catalogo.
+          Estos precios se autocompletan al registrar entradas o salidas. Puedes
+          ajustarlos en cada operacion sin tocar el catalogo.
         </p>
       </fieldset>
 
-      <Field label="Descripcion">
+      {/* <Field label="Descripcion">
         <textarea
           className="input min-h-20 py-2"
           defaultValue={product?.description ?? ""}
           name="description"
           placeholder="Detalles, marca, presentacion, etc."
         />
-      </Field>
+      </Field> */}
 
       <div className="flex justify-end">
         <SubmitButton>
           <Plus aria-hidden="true" className="h-4 w-4" />
-          {isEdit ? "Guardar cambios" : "Crear producto"}
+          {isEdit ? 'Guardar cambios' : 'Crear producto'}
         </SubmitButton>
       </div>
     </form>

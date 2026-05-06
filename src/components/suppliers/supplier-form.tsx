@@ -1,8 +1,8 @@
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react';
 
-import { Field } from "@/components/forms";
-import { SubmitButton } from "@/components/shared";
-import { createSupplier, updateSupplier } from "@/server/actions";
+import { Field } from '@/components/forms';
+import { SubmitButton } from '@/components/shared';
+import { createSupplier, updateSupplier } from '@/server/actions';
 
 export type SupplierFormValues = {
   id: string;
@@ -79,26 +79,26 @@ export function SupplierForm({ supplier }: { supplier?: SupplierFormValues }) {
         <Field label="Direccion">
           <input
             className="input"
-            defaultValue={supplier?.address ?? ""}
+            defaultValue={supplier?.address ?? ''}
             name="address"
             placeholder="Av., calle, distrito"
           />
         </Field>
       </fieldset>
 
-      <Field label="Notas">
+      {/* <Field label="Notas">
         <textarea
           className="input min-h-20 py-2"
           defaultValue={supplier?.notes ?? ""}
           name="notes"
           placeholder="Condiciones de pago, observaciones..."
         />
-      </Field>
+      </Field> */}
 
       <div className="flex justify-end">
         <SubmitButton>
           <Plus aria-hidden="true" className="h-4 w-4" />
-          {isEdit ? "Guardar cambios" : "Crear proveedor"}
+          {isEdit ? 'Guardar cambios' : 'Crear proveedor'}
         </SubmitButton>
       </div>
     </form>

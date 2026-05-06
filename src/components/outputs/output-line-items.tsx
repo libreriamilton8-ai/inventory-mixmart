@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   BriefcaseBusiness,
@@ -6,16 +6,16 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
-} from "lucide-react";
-import { useMemo, useState } from "react";
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import {
   ProductCombobox,
   type ProductComboboxOption,
-} from "@/components/forms/product-combobox";
-import { productCategoryLabels } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import type { ProductCategory } from "../../../prisma/generated/client";
+} from '@/components/forms/product-combobox';
+import { productCategoryLabels } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import type { ProductCategory } from '../../../prisma/generated/client';
 
 export type OutputProductOption = {
   id: string;
@@ -26,7 +26,7 @@ export type OutputProductOption = {
   salePrice: string | null;
 };
 
-type Reason = "SALE" | "WASTE" | "INTERNAL_USE";
+type Reason = 'SALE' | 'WASTE' | 'INTERNAL_USE';
 
 const reasonOptions: {
   value: Reason;
@@ -34,17 +34,17 @@ const reasonOptions: {
   description: string;
   icon: typeof ShoppingCart;
 }[] = [
-  { value: "SALE", label: "Venta", description: "Cliente", icon: ShoppingCart },
+  { value: 'SALE', label: 'Venta', description: 'Cliente', icon: ShoppingCart },
   {
-    value: "WASTE",
-    label: "Merma",
-    description: "Danado o perdido",
+    value: 'WASTE',
+    label: 'Merma',
+    description: 'Dañado o perdido',
     icon: CircleAlert,
   },
   {
-    value: "INTERNAL_USE",
-    label: "Uso interno",
-    description: "Consumo propio",
+    value: 'INTERNAL_USE',
+    label: 'Uso interno',
+    description: 'Consumo propio',
     icon: BriefcaseBusiness,
   },
 ];
@@ -59,9 +59,9 @@ type Row = {
 let nextRowId = 0;
 const newRow = (): Row => ({
   rowId: ++nextRowId,
-  productId: "",
-  quantity: "",
-  unitSalePrice: "",
+  productId: '',
+  quantity: '',
+  unitSalePrice: '',
 });
 
 export function OutputLineItems({
@@ -69,9 +69,9 @@ export function OutputLineItems({
 }: {
   products: OutputProductOption[];
 }) {
-  const [reason, setReason] = useState<Reason>("SALE");
+  const [reason, setReason] = useState<Reason>('SALE');
   const [rows, setRows] = useState<Row[]>(() => [newRow()]);
-  const isSale = reason === "SALE";
+  const isSale = reason === 'SALE';
 
   const options: ProductComboboxOption[] = useMemo(
     () =>
@@ -82,7 +82,7 @@ export function OutputLineItems({
         unitName: product.unitName,
         hint: productCategoryLabels[product.category],
         currentStock: `Stock: ${product.currentStock} ${product.unitName}${
-          product.salePrice ? ` - Venta S/ ${product.salePrice}` : ""
+          product.salePrice ? ` - Venta S/ ${product.salePrice}` : ''
         }`,
       })),
     [products],
@@ -91,7 +91,9 @@ export function OutputLineItems({
   const addRow = () => setRows((current) => [...current, newRow()]);
   const removeRow = (rowId: number) =>
     setRows((current) =>
-      current.length > 1 ? current.filter((row) => row.rowId !== rowId) : current,
+      current.length > 1
+        ? current.filter((row) => row.rowId !== rowId)
+        : current,
     );
   const updateRow = (rowId: number, patch: Partial<Row>) =>
     setRows((current) =>
@@ -113,10 +115,10 @@ export function OutputLineItems({
               return (
                 <label
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-control border px-3 py-2.5 text-sm transition active:scale-[0.95]",
+                    'flex cursor-pointer items-center gap-3 rounded-control border px-3 py-2.5 text-sm transition active:scale-[0.95]',
                     active
-                      ? "border-primary-300 bg-primary-50 text-primary-800"
-                      : "border-border bg-surface hover:border-primary-200 hover:bg-primary-50/60",
+                      ? 'border-primary-300 bg-primary-50 text-primary-800'
+                      : 'border-border bg-surface hover:border-primary-200 hover:bg-primary-50/60',
                   )}
                   key={option.value}
                 >
@@ -130,10 +132,10 @@ export function OutputLineItems({
                   />
                   <span
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-control border",
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-control border',
                       active
-                        ? "border-primary-200 bg-primary text-primary-foreground"
-                        : "border-border bg-surface-muted text-muted-foreground",
+                        ? 'border-primary-200 bg-primary text-primary-foreground'
+                        : 'border-border bg-surface-muted text-muted-foreground',
                     )}
                   >
                     <Icon aria-hidden="true" className="h-4 w-4" />
@@ -150,42 +152,36 @@ export function OutputLineItems({
           </div>
         </fieldset>
         <label className="space-y-1">
-          <span className="text-xs font-medium text-muted-foreground">Notas</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            Notas
+          </span>
           <textarea
-            className="input min-h-[104px] py-2"
+            className="input min-h-14 max-h-14 py-2 mt-1.5"
             name="notes"
             placeholder="Detalle breve para reconocer esta salida"
           />
         </label>
       </div>
 
+      <div className="flex justify-end">
+        <button
+          className="btn btn-soft h-9 px-3 text-xs"
+          onClick={addRow}
+          type="button"
+        >
+          <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+          Agregar
+        </button>
+      </div>
       <div className="rounded-card border border-border bg-surface">
-        <div className="flex items-center justify-between border-b border-border px-3 py-2">
-          <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Productos a retirar
-            </h4>
-            <p className="text-[11.5px] text-muted-foreground">
-              Buscas, eliges, y ya. Agrega los items que necesites.
-            </p>
-          </div>
-          <button
-            className="btn btn-soft h-9 px-3 text-xs"
-            onClick={addRow}
-            type="button"
-          >
-            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-            Agregar
-          </button>
-        </div>
         <div className="divide-y divide-border">
           {rows.map((row, index) => (
             <div
               className={cn(
-                "grid gap-2 p-3 md:items-end",
+                'grid gap-2 p-3 md:items-end',
                 isSale
-                  ? "md:grid-cols-[minmax(0,1fr)_120px_140px_auto]"
-                  : "md:grid-cols-[minmax(0,1fr)_120px_auto]",
+                  ? 'md:grid-cols-[minmax(0,1fr)_120px_140px_auto]'
+                  : 'md:grid-cols-[minmax(0,1fr)_120px_auto]',
               )}
               key={row.rowId}
             >
@@ -201,10 +197,10 @@ export function OutputLineItems({
                       ? products.find((item) => item.id === option.id)
                       : null;
                     updateRow(row.rowId, {
-                      productId: option?.id ?? "",
+                      productId: option?.id ?? '',
                       unitSalePrice:
                         row.unitSalePrice ||
-                        (product?.salePrice ? product.salePrice : ""),
+                        (product?.salePrice ? product.salePrice : ''),
                     });
                   }}
                   options={options}
@@ -239,7 +235,9 @@ export function OutputLineItems({
                     min="0"
                     name="unitSalePrice"
                     onChange={(event) =>
-                      updateRow(row.rowId, { unitSalePrice: event.target.value })
+                      updateRow(row.rowId, {
+                        unitSalePrice: event.target.value,
+                      })
                     }
                     placeholder="0.00"
                     step="0.01"
