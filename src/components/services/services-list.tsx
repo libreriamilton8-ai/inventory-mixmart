@@ -1,7 +1,9 @@
 import {
+  ActionTip,
   DataTable,
   EmptyState,
   PaginationBar,
+  RecordDetailModal,
   Section,
   SectionHeader,
   StatusBadge,
@@ -56,7 +58,7 @@ export async function ServicesList({
     prisma.serviceRecord.findMany({
       where,
       include: {
-        serviceType: { select: { name: true } },
+        serviceType: { select: { name: true, unitName: true } },
         createdBy: { select: { firstName: true, lastName: true } },
         consumptions: {
           include: {
@@ -88,6 +90,7 @@ export async function ServicesList({
             "Cantidad",
             "Fecha",
             "Consumo",
+            "Detalle",
           ]}
         >
           {records.map((record) => {
@@ -137,6 +140,16 @@ export async function ServicesList({
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  <ActionTip label="Detalle">
+                    <RecordDetailModal title="Detalle servicio">
+                      <ServiceRecordDetail
+                        consumptionCost={consumptionCost}
+                        record={record}
+                      />
+                    </RecordDetailModal>
+                  </ActionTip>
+                </td>
               </tr>
             );
           })}
@@ -149,5 +162,123 @@ export async function ServicesList({
       )}
       <PaginationBar {...meta} />
     </Section>
+  );
+}
+
+type ServiceRecordDetailProps = {
+  consumptionCost: number;
+  record: {
+    kind: ServiceKind;
+    status: ServiceStatus;
+    quantity: { toNumber: () => number } | number | string;
+    serviceDate: Date;
+    deliveredAt: Date | null;
+    externalVendorName: string | null;
+    notes: string | null;
+    serviceType: {
+      name: string;
+      unitName: string;
+    };
+    createdBy: {
+      firstName: string;
+      lastName: string;
+    };
+    consumptions: {
+      id: string;
+      quantity: { toNumber: () => number } | number | string;
+      product: {
+        name: string;
+        unitName: string;
+        purchasePrice: { toNumber: () => number } | number | string;
+      };
+    }[];
+  };
+};
+
+function ServiceRecordDetail({
+  consumptionCost,
+  record,
+}: ServiceRecordDetailProps) {
+  return (
+    <div className="space-y-4 p-5">
+      <div className="grid gap-3 md:grid-cols-2">
+        <DetailBox label="Servicio" value={record.serviceType.name} />
+        <DetailBox label="Tipo" value={serviceKindLabels[record.kind]} />
+        <DetailBox label="Estado" value={serviceStatusLabels[record.status]} />
+        <DetailBox
+          label="Cantidad"
+          value={`${formatDecimal(record.quantity, 3)} ${record.serviceType.unitName}`}
+        />
+        <DetailBox label="Fecha" value={formatDate(record.serviceDate)} />
+        <DetailBox
+          label="Entregado"
+          value={record.deliveredAt ? formatDate(record.deliveredAt) : "Pendiente"}
+        />
+        <DetailBox
+          label="Registrado por"
+          value={`${record.createdBy.firstName} ${record.createdBy.lastName}`}
+        />
+        <DetailBox
+          label="Proveedor externo"
+          value={record.externalVendorName || "No aplica"}
+        />
+        <DetailBox
+          className="md:col-span-2"
+          label="Notas"
+          value={record.notes || "Sin notas"}
+        />
+      </div>
+
+      <div className="rounded-control border border-border bg-surface">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+          <h3 className="text-sm font-semibold text-foreground">Insumos</h3>
+          <span className="text-sm font-semibold text-foreground">
+            {formatCurrency(consumptionCost)}
+          </span>
+        </div>
+        {record.consumptions.length ? (
+          <ul className="divide-y divide-border">
+            {record.consumptions.map((item) => (
+              <li
+                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                key={item.id}
+              >
+                <span className="font-medium text-foreground">
+                  {item.product.name}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDecimal(item.quantity, 3)} {item.product.unitName}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-3 py-3 text-sm text-muted-foreground">
+            Sin insumos consumidos.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailBox({
+  className,
+  label,
+  value,
+}: {
+  className?: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 rounded-control border border-border bg-surface-muted px-3 py-2 text-sm text-foreground">
+        {value}
+      </p>
+    </div>
   );
 }

@@ -84,7 +84,7 @@ export default async function ServicesPage({
             <FormModal
               size="lg"
               title="Registrar servicio"
-              description="Captura el servicio que se entrega."
+              description="Registra un servicio."
               trigger={
                 <>
                   <Plus aria-hidden="true" className="h-4 w-4" />
@@ -102,7 +102,7 @@ export default async function ServicesPage({
               <FormModal
                 size="lg"
                 title="Nuevo tipo de servicio"
-                description="Define un servicio reutilizable. Los insumos se eligen al registrar cada servicio."
+                description="Crea un tipo de servicio."
                 triggerClassName="btn-soft"
                 trigger={
                   <>
@@ -130,7 +130,7 @@ export default async function ServicesPage({
       ) : null}
 
       <Suspense
-        fallback={<TableSkeleton columns={6} rows={6} />}
+        fallback={<TableSkeleton columns={7} rows={6} />}
         key={filterKey}
       >
         <ServicesList

@@ -1,36 +1,30 @@
 import { Plus } from "lucide-react";
-import { Suspense } from "react";
 
-import {
-  DateRangeFilter,
-  FilterBar,
-  SelectFilter,
-} from "@/components/filters";
 import { OutputForm } from "@/components/outputs/output-form";
-import {
-  OutputsList,
-  type OutputsSearchParams,
-} from "@/components/outputs/outputs-list";
+import { OutputsPanel } from "@/components/outputs/outputs-panel";
 import {
   FlashMessage,
-  PageContentSkeleton,
   PageHeader,
 } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
 import { formatDecimal } from "@/lib/format";
 import { requireActiveUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import {
+  getStockOutputHistory,
+  type StockOutputHistoryParams,
+} from "@/services/stock-output.service";
 
 type OutputsPageProps = {
   searchParams: Promise<
-    OutputsSearchParams & { success?: string; error?: string }
+    StockOutputHistoryParams & { success?: string; error?: string }
   >;
 };
 
 export default async function OutputsPage({ searchParams }: OutputsPageProps) {
-  const [, params, products] = await Promise.all([
+  const params = await searchParams;
+  const [, products, initialPayload] = await Promise.all([
     requireActiveUser("/outputs"),
-    searchParams,
     prisma.product.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
@@ -45,9 +39,8 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
       },
       take: 300,
     }),
+    getStockOutputHistory(params),
   ]);
-
-  const filterKey = `${params.from ?? ""}|${params.to ?? ""}|${params.reason ?? ""}|${params.page ?? ""}|${params.pageSize ?? ""}`;
 
   return (
     <div className="space-y-3">
@@ -90,26 +83,7 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
         </FlashMessage>
       ) : null}
 
-      <Suspense fallback={<PageContentSkeleton />} key={filterKey}>
-        <OutputsList
-          filters={
-            <FilterBar>
-              <DateRangeFilter label="Periodo de salida" />
-              <SelectFilter
-                allLabel="Todos"
-                label="Motivo"
-                name="reason"
-                options={[
-                  { label: "Venta", value: "SALE" },
-                  { label: "Merma", value: "WASTE" },
-                  { label: "Uso interno", value: "INTERNAL_USE" },
-                ]}
-              />
-            </FilterBar>
-          }
-          searchParams={params}
-        />
-      </Suspense>
+      <OutputsPanel initialParams={params} initialPayload={initialPayload} />
     </div>
   );
 }

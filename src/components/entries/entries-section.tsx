@@ -3,9 +3,9 @@ import {
   SearchFilter,
   SelectFilter,
   DateRangeFilter,
-} from "@/components/filters";
-import { EntriesList, type EntriesSearchParams } from "./entries-list";
-import prisma from "@/lib/prisma";
+} from '@/components/filters';
+import { EntriesList, type EntriesSearchParams } from './entries-list';
+import prisma from '@/lib/prisma';
 
 export async function EntriesSection({
   searchParams,
@@ -15,7 +15,7 @@ export async function EntriesSection({
   const [suppliers] = await Promise.all([
     prisma.supplier.findMany({
       where: { isActive: true },
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       select: { id: true, name: true },
       take: 200,
     }),
@@ -30,19 +30,15 @@ export async function EntriesSection({
     <EntriesList
       filters={
         <FilterBar>
-          <DateRangeFilter label="Periodo de orden" />
-          <SearchFilter
-            label="Referencia"
-            name="q"
-            placeholder="Numero o codigo"
-          />
+          <DateRangeFilter label="Rango de fechas" />
+          <SearchFilter label="Buscar" name="q" placeholder="Numero o codigo" />
           <SelectFilter
-            allLabel="Todos"
+            allLabel="Rango de fechas"
             label="Estado"
             name="status"
             options={[
-              { label: "Ordenada", value: "ORDERED" },
-              { label: "Recibida", value: "RECEIVED" },
+              { label: 'Ordenada', value: 'ORDERED' },
+              { label: 'Recibida', value: 'RECEIVED' },
             ]}
           />
           <SelectFilter

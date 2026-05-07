@@ -95,7 +95,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
             <FilterBar>
               <DateRangeFilter label="Periodo de orden" />
               <SearchFilter
-                label="Referencia"
+                label="Buscar"
                 name="q"
                 placeholder="Numero o codigo"
               />

@@ -42,8 +42,7 @@ export function ServiceTypeForm() {
       </div>
 
       <p className="rounded-control border border-border bg-surface-muted px-3 py-2 text-[11.5px] text-muted-foreground">
-        Los insumos consumidos se eligen al registrar cada servicio. Asi puedes
-        usar lo que realmente gastaste sin estar atado a una receta fija.
+        Los insumos se eligen al registrar cada servicio.
       </p>
 
       <div className="flex justify-end">

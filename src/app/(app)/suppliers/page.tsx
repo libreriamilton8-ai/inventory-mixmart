@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { Fragment, Suspense } from 'react';
+import { Suspense } from 'react';
 
 import { SupplierForm } from '@/components/suppliers/supplier-form';
 import {
@@ -10,6 +10,7 @@ import {
   PageHeader,
   PaginationBar,
   RecordActions,
+  RecordDetailModal,
   RecordEditModal,
   RecordStatusBadge,
   Section,
@@ -111,7 +112,6 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
     'Estado',
     ...(canManage ? ['Acciones'] : []),
   ];
-  const colSpan = canManage ? 6 : 5;
 
   return (
     <div className="space-y-5">
@@ -163,94 +163,55 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
         {suppliers.length ? (
           <DataTable headers={headers}>
             {suppliers.map((supplier) => (
-              <Fragment key={supplier.id}>
-                <tr>
+              <tr key={supplier.id}>
+                <td className="px-4 py-3">
+                  <p className="font-medium text-foreground">
+                    {supplier.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    RUC {supplier.ruc}
+                  </p>
+                </td>
+                <td className="px-4 py-3">
+                  <p>{supplier.contactName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {supplier.phone}
+                  </p>
+                </td>
+                <td className="px-4 py-3">
+                  {supplier._count.productSuppliers}
+                </td>
+                <td className="px-4 py-3">{supplier._count.stockEntries}</td>
+                <td className="px-4 py-3">
+                  <RecordStatusBadge
+                    deletedAt={supplier.deletedAt}
+                    isActive={supplier.isActive}
+                  />
+                </td>
+                {canManage ? (
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">
-                      {supplier.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      RUC {supplier.ruc}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p>{supplier.contactName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {supplier.phone}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    {supplier._count.productSuppliers}
-                  </td>
-                  <td className="px-4 py-3">{supplier._count.stockEntries}</td>
-                  <td className="px-4 py-3">
-                    <RecordStatusBadge
+                    <RecordActions
                       deletedAt={supplier.deletedAt}
+                      detailTrigger={
+                        <RecordDetailModal title="Detalle proveedor">
+                          <SupplierDetail supplier={supplier} />
+                        </RecordDetailModal>
+                      }
+                      editTrigger={
+                        <RecordEditModal title="Editar proveedor">
+                          <SupplierForm supplier={supplier} />
+                        </RecordEditModal>
+                      }
+                      id={supplier.id}
                       isActive={supplier.isActive}
+                      onActivate={reactivateSupplier}
+                      onDeactivate={deactivateSupplier}
+                      onRestore={restoreSupplier}
+                      onSoftDelete={softDeleteSupplier}
                     />
                   </td>
-                  {canManage ? (
-                    <td className="px-4 py-3">
-                      <RecordActions
-                        deletedAt={supplier.deletedAt}
-                        editTrigger={
-                          <RecordEditModal
-                            title="Editar proveedor"
-                          >
-                            <SupplierForm supplier={supplier} />
-                          </RecordEditModal>
-                        }
-                        id={supplier.id}
-                        isActive={supplier.isActive}
-                        onActivate={reactivateSupplier}
-                        onDeactivate={deactivateSupplier}
-                        onRestore={restoreSupplier}
-                        onSoftDelete={softDeleteSupplier}
-                      />
-                    </td>
-                  ) : null}
-                </tr>
-                <tr className="bg-surface-muted/45">
-                  <td className="px-4 py-3" colSpan={colSpan}>
-                    <details>
-                      <summary className="cursor-pointer text-sm font-medium text-primary">
-                        Detalle y compras recientes
-                      </summary>
-                      <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        <div className="rounded-control border border-border bg-surface p-3">
-                          <p className="text-sm text-muted-foreground">
-                            {supplier.address || 'Sin direccion registrada'}
-                          </p>
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            {supplier.notes || 'Sin notas'}
-                          </p>
-                        </div>
-                        <div className="rounded-control border border-border bg-surface p-3">
-                          {supplier.stockEntries.length ? (
-                            <ul className="space-y-2">
-                              {supplier.stockEntries.map((entry) => (
-                                <li
-                                  className="flex justify-between gap-3 text-sm"
-                                  key={entry.id}
-                                >
-                                  <span>{formatDateOnly(entry.orderedAt)}</span>
-                                  <span className="font-medium">
-                                    {formatCurrency(sumLineCost(entry.items))}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              Sin compras recientes.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </details>
-                  </td>
-                </tr>
-              </Fragment>
+                ) : null}
+              </tr>
             ))}
           </DataTable>
         ) : (
@@ -261,6 +222,122 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
         )}
         <PaginationBar {...meta} />
       </Section>
+    </div>
+  );
+}
+
+type SupplierDetailProps = {
+  supplier: {
+    name: string;
+    ruc: string;
+    contactName: string;
+    phone: string;
+    address: string | null;
+    notes: string | null;
+    _count: {
+      productSuppliers: number;
+      stockEntries: number;
+    };
+    stockEntries: {
+      id: string;
+      orderedAt: Date;
+      items: {
+        quantity: { toNumber: () => number } | number | string;
+        unitCost: { toNumber: () => number } | number | string;
+      }[];
+    }[];
+  };
+};
+
+function SupplierDetail({ supplier }: SupplierDetailProps) {
+  return (
+    <div className="space-y-4 p-5">
+      <div className="grid gap-3 md:grid-cols-2">
+        <DetailBox label="Proveedor" value={supplier.name} />
+        <DetailBox label="RUC" value={supplier.ruc} />
+        <DetailBox label="Contacto" value={supplier.contactName} />
+        <DetailBox label="Telefono" value={supplier.phone} />
+        <DetailBox
+          className="md:col-span-2"
+          label="Direccion"
+          value={supplier.address || "Sin direccion registrada"}
+        />
+        <DetailBox
+          className="md:col-span-2"
+          label="Notas"
+          value={supplier.notes || "Sin notas"}
+        />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <SummaryBox
+          label="Productos vinculados"
+          value={String(supplier._count.productSuppliers)}
+        />
+        <SummaryBox
+          label="Compras registradas"
+          value={String(supplier._count.stockEntries)}
+        />
+      </div>
+
+      <div className="rounded-control border border-border bg-surface">
+        <div className="border-b border-border px-3 py-2">
+          <h3 className="text-sm font-semibold text-foreground">
+            Compras recientes
+          </h3>
+        </div>
+        {supplier.stockEntries.length ? (
+          <ul className="divide-y divide-border">
+            {supplier.stockEntries.map((entry) => (
+              <li
+                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                key={entry.id}
+              >
+                <span className="text-muted-foreground">
+                  {formatDateOnly(entry.orderedAt)}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {formatCurrency(sumLineCost(entry.items))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-3 py-3 text-sm text-muted-foreground">
+            Sin compras recientes.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailBox({
+  className,
+  label,
+  value,
+}: {
+  className?: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 rounded-control border border-border bg-surface-muted px-3 py-2 text-sm text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SummaryBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-control border border-border bg-surface-muted px-3 py-2">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }

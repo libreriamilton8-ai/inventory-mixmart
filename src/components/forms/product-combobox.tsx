@@ -129,7 +129,6 @@ export function ProductCombobox({
   useEffect(() => {
     if (open) {
       requestAnimationFrame(() => inputRef.current?.focus());
-      setActiveIndex(0);
     }
   }, [open]);
 
@@ -160,7 +159,13 @@ export function ProductCombobox({
           disabled ? "cursor-not-allowed opacity-50" : "hover:border-primary-300",
         )}
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          const nextOpen = !open;
+          setOpen(nextOpen);
+          if (nextOpen) {
+            setActiveIndex(0);
+          }
+        }}
         ref={triggerRef}
         type="button"
       >

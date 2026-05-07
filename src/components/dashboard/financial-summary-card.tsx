@@ -88,11 +88,11 @@ export function FinancialSummaryCard({
           <h2 className="font-display text-[19px] font-medium leading-tight tracking-tight sm:text-[25px]">
             Resumen financiero
           </h2>
-          <div className="w-28 shrink-0 sm:w-52">
+          <div className="w-40 shrink-0 sm:w-52">
             <Select
               aria-label="Rango del resumen financiero"
               className="min-h-9 gap-1.5 rounded-[11px] px-2.5 py-1.5 text-[12px] sm:min-h-11 sm:gap-3 sm:px-3.5 sm:py-2 sm:text-sm"
-              compactLabel="Fecha"
+              compactLabel={summary.rangeLabel}
               leadingIcon={
                 <CalendarDays
                   aria-hidden="true"

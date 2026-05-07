@@ -324,7 +324,7 @@ export function DateRangeFilter({
         onChange={({ from, to }) =>
           setMany({ [fromName]: from || undefined, [toName]: to || undefined })
         }
-        placeholder={placeholder ?? 'Todos'}
+        placeholder={placeholder ?? 'Rango de fechas'}
         toValue={toValue}
         triggerClassName="h-10 min-h-10 rounded-[8px] px-3 py-1.5 text-sm font-normal"
       />

@@ -29,7 +29,7 @@ type DecimalLike = { toNumber: () => number } | number | string | null;
 export type RecentOutput = {
   id: string;
   reason: StockOutputReason;
-  occurredAt: Date;
+  occurredAt: Date | string;
   items: {
     id: string;
     quantity: DecimalLike;

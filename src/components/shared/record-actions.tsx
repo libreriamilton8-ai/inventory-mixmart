@@ -90,6 +90,7 @@ export function RecordActions({
   id,
   isActive,
   deletedAt,
+  detailTrigger,
   editTrigger,
   onActivate,
   onDeactivate,
@@ -99,6 +100,7 @@ export function RecordActions({
   id: string;
   isActive: boolean;
   deletedAt?: Date | null;
+  detailTrigger?: ReactNode;
   editTrigger?: ReactNode;
   onActivate: ServerAction;
   onDeactivate: ServerAction;
@@ -108,6 +110,9 @@ export function RecordActions({
   if (deletedAt) {
     return (
       <div className="flex items-center gap-1">
+        {detailTrigger ? (
+          <ActionTip label="Detalle">{detailTrigger}</ActionTip>
+        ) : null}
         <ActionTip label="Restaurar">
           <IdActionForm
             action={onRestore}
@@ -124,6 +129,7 @@ export function RecordActions({
 
   return (
     <div className="flex items-center gap-1">
+      {detailTrigger ? <ActionTip label="Detalle">{detailTrigger}</ActionTip> : null}
       {editTrigger ? <ActionTip label="Editar">{editTrigger}</ActionTip> : null}
       <ActionTip label={isActive ? "Desactivar" : "Activar"}>
         <IdActionForm
