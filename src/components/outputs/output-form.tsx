@@ -6,7 +6,7 @@ import {
   OutputLineItems,
   type OutputProductOption,
 } from '@/components/outputs/output-line-items';
-import { SubmitButton } from '@/components/shared';
+import { CurrentUrlField, SubmitButton } from '@/components/shared';
 import { createStockOutput } from '@/server/actions';
 
 type OutputFormProps = {
@@ -16,6 +16,7 @@ type OutputFormProps = {
 export function OutputForm({ products }: OutputFormProps) {
   return (
     <form action={createStockOutput} className="space-y-3 p-4 md:p-5">
+      <CurrentUrlField />
       <OutputLineItems products={products} />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end">

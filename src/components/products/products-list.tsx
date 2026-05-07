@@ -111,7 +111,26 @@ export async function ProductsList({
   return (
     <Section>
       {filters}
-      <DataTable headers={headers} containerClassName="overflow-x-auto">
+      <DataTable
+        columnWidths={
+          role === "ADMIN"
+            ? [
+                "22%",
+                "11%",
+                "14%",
+                "9%",
+                "9%",
+                "9%",
+                "9%",
+                "8%",
+                ...(canManage ? ["9%"] : []),
+              ]
+            : ["28%", "14%", "18%", "11%", "11%", "10%", ...(canManage ? ["8%"] : [])]
+        }
+        containerClassName="overflow-x-auto"
+        headers={headers}
+        minWidth={role === "ADMIN" ? "1120px" : "860px"}
+      >
         {products.map((product) => {
           const current = decimalToNumber(product.currentStock);
           const minimum = decimalToNumber(product.minimumStock);

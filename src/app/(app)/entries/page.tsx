@@ -12,7 +12,7 @@ import {
   SearchFilter,
   SelectFilter,
 } from '@/components/filters';
-import { FlashMessage, PageHeader, TableSkeleton } from '@/components/shared';
+import { PageHeader, TableSkeleton, ToastOnLoad } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
 import { requireActiveUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
@@ -80,9 +80,14 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">
-          Entrada registrada correctamente.
-        </FlashMessage>
+        <ToastOnLoad
+          title={
+            params.success === 'received'
+              ? 'Entrada recibida correctamente.'
+              : 'Entrada registrada correctamente.'
+          }
+          type="success"
+        />
       ) : null}
 
       <Suspense fallback={<TableSkeleton columns={7} rows={6} />}>

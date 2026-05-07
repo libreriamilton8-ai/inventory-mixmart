@@ -5,7 +5,6 @@ import { SupplierForm } from '@/components/suppliers/supplier-form';
 import {
   DataTable,
   EmptyState,
-  FlashMessage,
   PageContentSkeleton,
   PageHeader,
   PaginationBar,
@@ -14,6 +13,7 @@ import {
   RecordEditModal,
   RecordStatusBadge,
   Section,
+  ToastOnLoad,
 } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
 import { formatCurrency, formatDateOnly } from '@/lib/format';
@@ -137,9 +137,7 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">
-          Proveedor guardado correctamente.
-        </FlashMessage>
+        <ToastOnLoad title="Proveedor guardado correctamente." type="success" />
       ) : null}
 
       <Section>
@@ -162,7 +160,15 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
           />
         </FilterBar>
         {suppliers.length ? (
-          <DataTable headers={headers}>
+          <DataTable
+            columnWidths={
+              canManage
+                ? ['24%', '22%', '10%', '10%', '14%', '20%']
+                : ['28%', '28%', '14%', '14%', '16%']
+            }
+            headers={headers}
+            minWidth={canManage ? '900px' : '760px'}
+          >
             {suppliers.map((supplier) => (
               <tr key={supplier.id}>
                 <td className="px-4 py-3">

@@ -83,6 +83,7 @@ export async function ServicesList({
       {filters}
       {records.length ? (
         <DataTable
+          columnWidths={["22%", "12%", "13%", "10%", "18%", "13%", "12%"]}
           headers={[
             "Servicio",
             "Tipo",
@@ -92,6 +93,7 @@ export async function ServicesList({
             "Consumo",
             "Detalle",
           ]}
+          minWidth="920px"
         >
           {records.map((record) => {
             const consumptionCost = record.consumptions.reduce(

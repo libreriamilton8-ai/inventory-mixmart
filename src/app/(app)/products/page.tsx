@@ -9,9 +9,9 @@ import {
   type ProductsSearchParams,
 } from '@/components/products/products-list';
 import {
-  FlashMessage,
   PageHeader,
   TableSkeleton,
+  ToastOnLoad,
 } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
 import { productCategoryLabels } from '@/lib/format';
@@ -63,9 +63,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       />
 
       {params.success ? (
-        <FlashMessage type="success">
-          Producto guardado correctamente.
-        </FlashMessage>
+        <ToastOnLoad title="Producto guardado correctamente." type="success" />
       ) : null}
 
       <Suspense fallback={<TableSkeleton columns={6} rows={6} />}>

@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 
 import { Field } from '@/components/forms';
-import { SubmitButton } from '@/components/shared';
+import { CurrentUrlField, SubmitButton } from '@/components/shared';
 import { Select } from '@/components/ui/select';
 import { productCategoryLabels } from '@/lib/format';
 import { getBrands } from '@/services';
@@ -36,6 +36,7 @@ export async function ProductForm({
       action={isEdit ? updateProduct : createProduct}
       className="space-y-3 p-5"
     >
+      <CurrentUrlField />
       {isEdit && product ? (
         <input name="id" type="hidden" value={product.id} />
       ) : null}

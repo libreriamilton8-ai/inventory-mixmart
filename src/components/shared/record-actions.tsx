@@ -9,6 +9,7 @@ import {
   iconBtnWarn,
 } from "./record-action-styles";
 import { SubmitButton } from "./submit-button";
+import { CurrentUrlField } from "./current-url-field";
 
 type ServerAction = (formData: FormData) => Promise<void> | void;
 type HiddenField = {
@@ -65,6 +66,7 @@ export function IdActionForm({
   return (
     <form action={action}>
       <input name="id" type="hidden" value={id} />
+      <CurrentUrlField />
       {fields.map((field) => (
         <input
           key={field.name}

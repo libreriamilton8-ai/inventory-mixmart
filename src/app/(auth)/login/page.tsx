@@ -4,6 +4,7 @@ import { Store } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 import { LoginForm } from '@/components/auth/login-form';
+import { ToastOnLoad } from '@/components/shared/toast';
 import { authOptions, getSafeCallbackUrl } from '@/lib/auth';
 
 type LoginPageProps = {
@@ -22,12 +23,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   const params = await searchParams;
   const callbackUrl = getSafeCallbackUrl(params.callbackUrl);
-  const initialError = params.error
-    ? 'No se pudo iniciar sesion. Revisa tus datos e intenta de nuevo.'
-    : undefined;
+  const errorCode = Array.isArray(params.error) ? params.error[0] : params.error;
+  const errorMessage = getLoginErrorMessage(errorCode);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6 lg:px-8">
+      {errorMessage ? (
+        <ToastOnLoad
+          title={errorMessage}
+          type="error"
+        />
+      ) : null}
       <section className="grid w-full max-w-6xl overflow-hidden rounded-card border border-border bg-surface-elevated shadow-soft lg:min-h-[620px] lg:grid-cols-[1.05fr_0.95fr]">
         <div className="relative hidden bg-surface-muted p-8 lg:flex lg:flex-col lg:justify-between">
           <div className="flex items-center gap-3">
@@ -96,7 +102,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </div>
             </div>
 
-            <LoginForm callbackUrl={callbackUrl} initialError={initialError} />
+            <LoginForm callbackUrl={callbackUrl} />
             <footer className="mt-8 border-t border-border/60 pt-4 text-center text-xs text-muted-foreground">
               © {new Date().getFullYear()} El Colorado. Todos los derechos
               reservados.
@@ -106,4 +112,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </section>
     </main>
   );
+}
+
+function getLoginErrorMessage(errorCode: string | undefined) {
+  if (!errorCode) {
+    return undefined;
+  }
+
+  if (errorCode === 'AccessDenied') {
+    return 'Tu cuenta no esta registrada o esta inactiva.';
+  }
+
+  return 'No se pudo iniciar sesion. Revisa tus datos e intenta de nuevo.';
 }

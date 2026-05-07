@@ -119,6 +119,7 @@ export async function StockTable({
     <Section>
       {filters}
       <DataTable
+        columnWidths={["24%", "16%", "10%", "10%", "10%", "10%", "20%"]}
         headers={[
           "Producto",
           "Categoria",
@@ -128,6 +129,7 @@ export async function StockTable({
           "Estado",
           "Ultimo movimiento",
         ]}
+        minWidth="940px"
       >
         {rows.map((row) => {
           const current = decimalToNumber(row.currentStock);

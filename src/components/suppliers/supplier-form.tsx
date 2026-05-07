@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 
 import { Field } from '@/components/forms';
-import { SubmitButton } from '@/components/shared';
+import { CurrentUrlField, SubmitButton } from '@/components/shared';
 import { createSupplier, updateSupplier } from '@/server/actions';
 
 export type SupplierFormValues = {
@@ -22,6 +22,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierFormValues }) {
       action={isEdit ? updateSupplier : createSupplier}
       className="space-y-3 p-5"
     >
+      <CurrentUrlField />
       {isEdit && supplier ? (
         <input name="id" type="hidden" value={supplier.id} />
       ) : null}

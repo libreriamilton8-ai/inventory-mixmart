@@ -469,6 +469,7 @@
   .table-operational {
     @apply min-w-full border-separate border-spacing-0 text-sm;
     border-radius: 10px;
+    table-layout: fixed;
   }
 
   .table-operational thead,
@@ -485,6 +486,7 @@
   .table-operational th {
     @apply px-4 py-3 font-semibold;
     position: relative;
+    overflow-wrap: anywhere;
   }
 
   .table-operational thead th:first-child {
@@ -508,6 +510,7 @@
 
   .table-operational td {
     @apply px-4 py-3 align-middle;
+    overflow-wrap: anywhere;
   }
 
   .table-operational tbody tr {

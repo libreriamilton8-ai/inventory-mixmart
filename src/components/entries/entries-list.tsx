@@ -95,6 +95,8 @@ export async function EntriesList({
     <Section>
       {filters}
       <DataTable
+        columnWidths={['17%', '18%', '12%', '20%', '9%', '12%', '12%']}
+        minWidth="920px"
         headers={[
           'Referencia',
           'Proveedor',

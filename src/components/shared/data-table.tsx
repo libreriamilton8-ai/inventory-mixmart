@@ -7,6 +7,8 @@ type DataTableProps = {
   children: ReactNode;
   sticky?: boolean;
   containerClassName?: string;
+  columnWidths?: string[];
+  minWidth?: string;
 };
 
 export function DataTable({
@@ -14,6 +16,8 @@ export function DataTable({
   children,
   sticky = false,
   containerClassName,
+  columnWidths,
+  minWidth,
 }: DataTableProps) {
   return (
     <div
@@ -23,7 +27,14 @@ export function DataTable({
         containerClassName,
       )}
     >
-      <table className="table-operational">
+      <table className="table-operational" style={minWidth ? { minWidth } : undefined}>
+        {columnWidths?.length ? (
+          <colgroup>
+            {headers.map((_, index) => (
+              <col key={index} style={{ width: columnWidths[index] }} />
+            ))}
+          </colgroup>
+        ) : null}
         <thead className={cn("table-operational-head", sticky && "sticky top-0")}>
           <tr>
             {headers.map((header, index) => (

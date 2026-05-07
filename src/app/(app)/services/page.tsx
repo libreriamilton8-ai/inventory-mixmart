@@ -9,7 +9,7 @@ import {
   ServicesList,
   type ServicesSearchParams,
 } from '@/components/services/services-list';
-import { FlashMessage, PageHeader, TableSkeleton } from '@/components/shared';
+import { PageHeader, TableSkeleton, ToastOnLoad } from '@/components/shared';
 import { FormModal } from '@/components/ui/modal';
 import { formatDecimal, serviceKindLabels } from '@/lib/format';
 import { requireActiveUser } from '@/lib/auth';
@@ -119,14 +119,21 @@ export default async function ServicesPage({
       />
 
       {params.success ? (
-        <FlashMessage type="success">
-          Servicio guardado correctamente.
-        </FlashMessage>
+        <ToastOnLoad
+          title={
+            params.success === 'type'
+              ? 'Tipo de servicio creado.'
+              : 'Servicio registrado correctamente.'
+          }
+          type="success"
+        />
       ) : null}
       {params.error === 'stock' ? (
-        <FlashMessage type="error">
-          Stock insuficiente para consumir insumos.
-        </FlashMessage>
+        <ToastOnLoad
+          title="Stock insuficiente."
+          description="No se pudo consumir los insumos."
+          type="error"
+        />
       ) : null}
 
       <Suspense fallback={<TableSkeleton columns={7} rows={6} />}>

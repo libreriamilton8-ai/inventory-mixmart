@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 
 import { EntryLineItems, type EntryProductOption } from "@/components/entries/entry-line-items";
 import { Field, ProductCombobox } from "@/components/forms";
-import { SubmitButton } from "@/components/shared";
+import { CurrentUrlField, SubmitButton } from "@/components/shared";
 import { Select } from "@/components/ui/select";
 import { createStockEntry } from "@/server/actions";
 
@@ -20,6 +20,7 @@ export function EntryForm({
 }) {
   return (
     <form action={createStockEntry} className="space-y-3 p-5">
+      <CurrentUrlField />
       <div className="grid gap-3 md:grid-cols-4">
         <Field className="md:col-span-2" label="Proveedor">
           <ProductCombobox

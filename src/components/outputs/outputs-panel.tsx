@@ -213,6 +213,7 @@ export function OutputsPanel({
         <div className={cn('transition-opacity', pending ? 'opacity-60' : '')}>
           {payload.outputs.length ? (
             <DataTable
+              columnWidths={['12%', '18%', '18%', '9%', '14%', '14%', '15%']}
               headers={[
                 'Motivo',
                 'Fecha',
@@ -222,6 +223,7 @@ export function OutputsPanel({
                 'Ingreso',
                 'Detalle',
               ]}
+              minWidth="920px"
             >
               {payload.outputs.map((output) => (
                 <tr key={output.id}>

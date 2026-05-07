@@ -1,13 +1,14 @@
 import { Plus } from "lucide-react";
 
 import { Field } from "@/components/forms";
-import { SubmitButton } from "@/components/shared";
+import { CurrentUrlField, SubmitButton } from "@/components/shared";
 import { Select } from "@/components/ui/select";
 import { createServiceType } from "@/server/actions";
 
 export function ServiceTypeForm() {
   return (
     <form action={createServiceType} className="space-y-4 p-5">
+      <CurrentUrlField />
       <div className="grid gap-3 md:grid-cols-2">
         <Field className="md:col-span-2" label="Nombre">
           <input

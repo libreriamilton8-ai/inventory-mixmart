@@ -3,11 +3,12 @@ import { Camera, ShieldCheck } from "lucide-react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
-  FlashMessage,
   Section,
   SectionHeader,
   StatusBadge,
   SubmitButton,
+  ToastOnLoad,
+  CurrentUrlField,
 } from "@/components/shared";
 import { formatDate, roleLabels } from "@/lib/format";
 import { requireActiveUser } from "@/lib/auth";
@@ -39,12 +40,13 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   return (
     <div className="space-y-3">
       {params.success ? (
-        <FlashMessage type="success">Perfil actualizado correctamente.</FlashMessage>
+        <ToastOnLoad title="Perfil actualizado correctamente." type="success" />
       ) : null}
       {params.error && params.error in errorMessages ? (
-        <FlashMessage type="error">
-          {errorMessages[params.error as keyof typeof errorMessages]}
-        </FlashMessage>
+        <ToastOnLoad
+          title={errorMessages[params.error as keyof typeof errorMessages]}
+          type="error"
+        />
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[22rem_1fr]">
@@ -104,6 +106,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             className="grid gap-4 p-6 md:grid-cols-2"
             encType="multipart/form-data"
           >
+            <CurrentUrlField />
             <label className="space-y-1.5">
               <span className="text-xs font-semibold text-muted-foreground">
                 Nombre

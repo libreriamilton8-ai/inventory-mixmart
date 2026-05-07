@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireActiveUser, requireRole } from "@/lib/auth";
+import { actionRedirectPath } from "@/lib/action-redirect";
 import { ADMIN_ROLE, OPERATIONAL_ROLES } from "@/lib/permissions";
 import {
   SelfDeactivationError,
@@ -75,7 +76,7 @@ export async function createProduct(formData: FormData) {
 
   await createProductRecord(data);
   revalidateCatalog();
-  redirect("/products?success=created");
+  redirect(actionRedirectPath(formData, "/products", { success: "created" }));
 }
 
 export async function updateProduct(formData: FormData) {
@@ -84,7 +85,7 @@ export async function updateProduct(formData: FormData) {
 
   await updateProductRecord(data);
   revalidateCatalog();
-  redirect("/products?success=updated");
+  redirect(actionRedirectPath(formData, "/products", { success: "updated" }));
 }
 
 export async function deactivateProduct(formData: FormData) {
@@ -117,7 +118,7 @@ export async function createSupplier(formData: FormData) {
 
   await createSupplierRecord(data);
   revalidateCatalog();
-  redirect("/suppliers?success=created");
+  redirect(actionRedirectPath(formData, "/suppliers", { success: "created" }));
 }
 
 export async function updateSupplier(formData: FormData) {
@@ -126,7 +127,7 @@ export async function updateSupplier(formData: FormData) {
 
   await updateSupplierRecord(data);
   revalidateCatalog();
-  redirect("/suppliers?success=updated");
+  redirect(actionRedirectPath(formData, "/suppliers", { success: "updated" }));
 }
 
 export async function deactivateSupplier(formData: FormData) {
@@ -164,13 +165,14 @@ export async function createStockEntry(formData: FormData) {
     items,
   });
   revalidateOperations();
-  redirect("/entries?success=created");
+  redirect(actionRedirectPath(formData, "/entries", { success: "created" }));
 }
 
 export async function receiveStockEntry(formData: FormData) {
   await requireRole(OPERATIONAL_ROLES, "/entries");
   await receiveStockEntryRecord(idFromForm(formData));
   revalidateOperations();
+  redirect(actionRedirectPath(formData, "/entries", { success: "received" }));
 }
 
 export async function createStockOutput(formData: FormData) {
@@ -186,13 +188,13 @@ export async function createStockOutput(formData: FormData) {
     });
   } catch (error) {
     if (isInsufficientStockError(error)) {
-      redirect("/outputs?error=stock");
+      redirect(actionRedirectPath(formData, "/outputs", { error: "stock" }));
     }
     throw error;
   }
 
   revalidateOperations();
-  redirect("/outputs?success=created");
+  redirect(actionRedirectPath(formData, "/outputs", { success: "created" }));
 }
 
 export async function createServiceType(formData: FormData) {
@@ -201,7 +203,7 @@ export async function createServiceType(formData: FormData) {
 
   await createServiceTypeRecord({ data });
   revalidatePath("/services");
-  redirect("/services?success=type");
+  redirect(actionRedirectPath(formData, "/services", { success: "type" }));
 }
 
 export async function deactivateServiceType(formData: FormData) {
@@ -235,13 +237,13 @@ export async function createServiceRecord(formData: FormData) {
     });
   } catch (error) {
     if (isInsufficientStockError(error)) {
-      redirect("/services?error=stock");
+      redirect(actionRedirectPath(formData, "/services", { error: "stock" }));
     }
     throw error;
   }
 
   revalidateOperations();
-  redirect("/services?success=record");
+  redirect(actionRedirectPath(formData, "/services", { success: "record" }));
 }
 
 export async function createUser(formData: FormData) {
@@ -250,7 +252,7 @@ export async function createUser(formData: FormData) {
 
   await createUserAccount(data);
   revalidatePath("/users");
-  redirect("/users?success=created");
+  redirect(actionRedirectPath(formData, "/users", { success: "created" }));
 }
 
 export async function updateUser(formData: FormData) {
@@ -259,7 +261,7 @@ export async function updateUser(formData: FormData) {
 
   await updateUserAccount(data);
   revalidatePath("/users");
-  redirect("/users?success=updated");
+  redirect(actionRedirectPath(formData, "/users", { success: "updated" }));
 }
 
 export async function setUserActive(formData: FormData) {
@@ -273,7 +275,7 @@ export async function setUserActive(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof SelfDeactivationError) {
-      redirect("/users?error=self");
+      redirect(actionRedirectPath(formData, "/users", { error: "self" }));
     }
     throw error;
   }
@@ -297,7 +299,7 @@ export async function updateOwnProfile(formData: FormData) {
       dni: data.dni,
     })
   ) {
-    redirect("/profile?error=duplicate");
+    redirect(actionRedirectPath(formData, "/profile", { error: "duplicate" }));
   }
 
   try {
@@ -309,7 +311,7 @@ export async function updateOwnProfile(formData: FormData) {
     }
   } catch (error) {
     if (error instanceof AvatarUploadError) {
-      redirect(`/profile?error=${error.code}`);
+      redirect(actionRedirectPath(formData, "/profile", { error: error.code }));
     }
 
     throw error;
@@ -323,7 +325,7 @@ export async function updateOwnProfile(formData: FormData) {
   });
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  redirect("/profile?success=profile");
+  redirect(actionRedirectPath(formData, "/profile", { success: "profile" }));
 }
 
 export async function requireCurrentUser() {

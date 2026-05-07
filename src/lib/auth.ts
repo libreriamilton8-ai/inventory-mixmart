@@ -45,6 +45,7 @@ export function getSignInPath(callbackUrl?: string) {
 
 export const authOptions: NextAuthOptions = {
   pages: {
+    error: SIGN_IN_PATH,
     signIn: SIGN_IN_PATH,
   },
   session: {

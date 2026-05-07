@@ -2,10 +2,7 @@ import { Plus } from "lucide-react";
 
 import { OutputForm } from "@/components/outputs/output-form";
 import { OutputsPanel } from "@/components/outputs/outputs-panel";
-import {
-  FlashMessage,
-  PageHeader,
-} from "@/components/shared";
+import { PageHeader, ToastOnLoad } from "@/components/shared";
 import { FormModal } from "@/components/ui/modal";
 import { formatDecimal } from "@/lib/format";
 import { requireActiveUser } from "@/lib/auth";
@@ -76,12 +73,14 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">Salida registrada correctamente.</FlashMessage>
+        <ToastOnLoad title="Salida registrada correctamente." type="success" />
       ) : null}
       {params.error === "stock" ? (
-        <FlashMessage type="error">
-          Stock insuficiente para completar la salida.
-        </FlashMessage>
+        <ToastOnLoad
+          title="Stock insuficiente."
+          description="No se pudo completar la salida."
+          type="error"
+        />
       ) : null}
 
       <OutputsPanel initialParams={params} initialPayload={initialPayload} />

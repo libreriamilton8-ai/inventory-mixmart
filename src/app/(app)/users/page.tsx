@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 import {
   DataTable,
   EmptyState,
-  FlashMessage,
   ActionTip,
   IdActionForm,
   OperationalPageSkeleton,
@@ -13,6 +12,7 @@ import {
   RecordEditModal,
   Section,
   StatusBadge,
+  ToastOnLoad,
   iconBtnGood,
   iconBtnWarn,
 } from '@/components/shared';
@@ -79,15 +79,19 @@ async function UsersContent({ searchParams }: UsersPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">Usuario guardado correctamente.</FlashMessage>
+        <ToastOnLoad title="Usuario guardado correctamente." type="success" />
       ) : null}
       {params.error === 'self' ? (
-        <FlashMessage type="error">No puedes desactivar tu propia cuenta.</FlashMessage>
+        <ToastOnLoad
+          title="No puedes desactivar tu propia cuenta."
+          type="error"
+        />
       ) : null}
 
       <Section>
         {users.length ? (
           <DataTable
+            columnWidths={['22%', '22%', '12%', '12%', '16%', '16%']}
             headers={[
               'Usuario',
               'Contacto',
@@ -96,6 +100,7 @@ async function UsersContent({ searchParams }: UsersPageProps) {
               'Ultimo acceso',
               'Acciones',
             ]}
+            minWidth="900px"
           >
             {users.map((user) => (
               <tr key={user.id} className={user.isActive ? '' : 'bg-surface-muted/45'}>

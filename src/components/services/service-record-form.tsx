@@ -8,7 +8,7 @@ import {
   ProductCombobox,
   type ProductComboboxOption,
 } from '@/components/forms';
-import { SubmitButton } from '@/components/shared';
+import { CurrentUrlField, SubmitButton } from '@/components/shared';
 import { Select } from '@/components/ui/select';
 import { serviceKindLabels } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -77,6 +77,7 @@ export function ServiceRecordForm({
 
   return (
     <form action={createServiceRecord} className="space-y-3 p-5">
+      <CurrentUrlField />
       <div className="grid gap-3 md:grid-cols-2">
         <Field className="md:col-span-2" label="Tipo de servicio">
           <ProductCombobox

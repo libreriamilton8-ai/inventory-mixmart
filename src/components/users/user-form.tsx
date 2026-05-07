@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 
 import { Field } from '@/components/forms';
-import { SubmitButton } from '@/components/shared';
+import { CurrentUrlField, SubmitButton } from '@/components/shared';
 import { Select } from '@/components/ui/select';
 import { roleLabels } from '@/lib/format';
 import { createUser, updateUser } from '@/server/actions';
@@ -25,6 +25,7 @@ export function UserForm({ user }: { user?: UserFormValues }) {
 
   return (
     <form action={isEdit ? updateUser : createUser} className="space-y-3 p-5">
+      <CurrentUrlField />
       {isEdit && user ? (
         <input name="id" type="hidden" value={user.id} />
       ) : null}
