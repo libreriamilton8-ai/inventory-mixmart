@@ -52,6 +52,11 @@ export type User = Prisma.UserModel
  */
 export type Supplier = Prisma.SupplierModel
 /**
+ * Model Brand
+ * 
+ */
+export type Brand = Prisma.BrandModel
+/**
  * Model Product
  * 
  */

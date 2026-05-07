@@ -55,7 +55,6 @@ export async function ProductsList({
           OR: [
             { name: { contains: q, mode: "insensitive" as const } },
             { sku: { contains: q, mode: "insensitive" as const } },
-            { barcode: { contains: q, mode: "insensitive" as const } },
           ],
         }
       : {}),
@@ -114,7 +113,7 @@ export async function ProductsList({
               <td className="px-4 py-3">
                 <p className="font-medium text-foreground">{product.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {product.sku || product.barcode || product.unitName}
+                  {product.sku || product.unitName}
                 </p>
               </td>
               <td className="px-4 py-3">

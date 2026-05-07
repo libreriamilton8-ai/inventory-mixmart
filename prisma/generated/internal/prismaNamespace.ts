@@ -386,6 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   Supplier: 'Supplier',
+  Brand: 'Brand',
   Product: 'Product',
   ProductSupplier: 'ProductSupplier',
   StockEntry: 'StockEntry',
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "supplier" | "product" | "productSupplier" | "stockEntry" | "stockEntryItem" | "stockOutput" | "stockOutputItem" | "serviceType" | "serviceTypeSupply" | "serviceRecord" | "serviceConsumption" | "stockMovement"
+    modelProps: "user" | "supplier" | "brand" | "product" | "productSupplier" | "stockEntry" | "stockEntryItem" | "stockOutput" | "stockOutputItem" | "serviceType" | "serviceTypeSupply" | "serviceRecord" | "serviceConsumption" | "stockMovement"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -561,6 +562,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.SupplierCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.SupplierCountAggregateOutputType> | number
+        }
+      }
+    }
+    Brand: {
+      payload: Prisma.$BrandPayload<ExtArgs>
+      fields: Prisma.BrandFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BrandFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BrandFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        findFirst: {
+          args: Prisma.BrandFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BrandFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        findMany: {
+          args: Prisma.BrandFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>[]
+        }
+        create: {
+          args: Prisma.BrandCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        createMany: {
+          args: Prisma.BrandCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BrandCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>[]
+        }
+        delete: {
+          args: Prisma.BrandDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        update: {
+          args: Prisma.BrandUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        deleteMany: {
+          args: Prisma.BrandDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BrandUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BrandUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>[]
+        }
+        upsert: {
+          args: Prisma.BrandUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrandPayload>
+        }
+        aggregate: {
+          args: Prisma.BrandAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBrand>
+        }
+        groupBy: {
+          args: Prisma.BrandGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BrandGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BrandCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BrandCountAggregateOutputType> | number
         }
       }
     }
@@ -1467,10 +1542,24 @@ export const SupplierScalarFieldEnum = {
 export type SupplierScalarFieldEnum = (typeof SupplierScalarFieldEnum)[keyof typeof SupplierScalarFieldEnum]
 
 
+export const BrandScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type BrandScalarFieldEnum = (typeof BrandScalarFieldEnum)[keyof typeof BrandScalarFieldEnum]
+
+
 export const ProductScalarFieldEnum = {
   id: 'id',
   sku: 'sku',
   barcode: 'barcode',
+  brandId: 'brandId',
   name: 'name',
   description: 'description',
   category: 'category',
@@ -1951,6 +2040,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   supplier?: Prisma.SupplierOmit
+  brand?: Prisma.BrandOmit
   product?: Prisma.ProductOmit
   productSupplier?: Prisma.ProductSupplierOmit
   stockEntry?: Prisma.StockEntryOmit

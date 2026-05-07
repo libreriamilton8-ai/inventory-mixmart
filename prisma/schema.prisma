@@ -112,10 +112,26 @@ model Supplier {
   @@map("suppliers")
 }
 
+model Brand {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  name      String    @unique(map: "uq_brands_name") @db.VarChar(100)
+  code      String    @unique(map: "uq_brands_code") @db.VarChar(10)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  products Product[]
+
+  @@index([isActive, name], map: "idx_brands_active_name")
+  @@map("brands")
+}
+
 model Product {
   id            String          @id @default(uuid(7)) @db.Uuid
   sku           String?         @unique(map: "uq_products_sku") @db.VarChar(50)
   barcode       String?         @unique(map: "uq_products_barcode") @db.VarChar(64)
+  brandId       String?         @map("brand_id") @db.Uuid
   name          String          @db.VarChar(150)
   description   String?         @db.Text
   category      ProductCategory
@@ -130,6 +146,7 @@ model Product {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
+  brand               Brand?              @relation(fields: [brandId], references: [id])
   productSuppliers    ProductSupplier[]
   stockEntryItems     StockEntryItem[]
   stockOutputItems    StockOutputItem[]
@@ -137,6 +154,7 @@ model Product {
   serviceTypeSupplies ServiceTypeSupply[]
   serviceConsumptions ServiceConsumption[]
 
+  @@index([brandId], map: "idx_products_brand")
   @@index([deletedAt, name], map: "idx_products_deleted_name")
   @@index([category, deletedAt, name], map: "idx_products_category_deleted_name")
   @@index([deletedAt, currentStock], map: "idx_products_deleted_current_stock")

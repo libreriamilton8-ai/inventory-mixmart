@@ -9,6 +9,23 @@ import type { ProductCategory } from "../../prisma/generated/client";
 
 type RestorableModel = "product" | "supplier" | "serviceType" | "serviceTypeSupply";
 
+const CATEGORY_CODE: Record<string, string> = {
+  SCHOOL_SUPPLIES: "ESC",
+  BAZAAR: "BAZ",
+  SNACKS: "SNK",
+};
+
+async function generateProductCode(brandCode: string, category: string): Promise<string> {
+  const catCode = CATEGORY_CODE[category] ?? "GEN";
+  for (let i = 0; i < 10; i++) {
+    const suffix = Math.random().toString(36).slice(2, 7).toUpperCase();
+    const code = `${brandCode}-${catCode}-${suffix}`;
+    const exists = await prisma.product.findUnique({ where: { sku: code } });
+    if (!exists) return code;
+  }
+  return `${brandCode}-${catCode}-${Date.now().toString(36).toUpperCase().slice(-5)}`;
+}
+
 async function restoreModel(model: RestorableModel, id: string) {
   const delegate = prisma[model] as unknown as {
     restore(where: { id: string }): Promise<unknown>;
@@ -17,11 +34,49 @@ async function restoreModel(model: RestorableModel, id: string) {
   await delegate.restore({ id });
 }
 
+type BrandRow = { id: string; name: string; code: string };
+
+export async function getBrands(): Promise<BrandRow[]> {
+  try {
+    const rows = await prisma.$queryRaw<BrandRow[]>`
+      SELECT id::text, name, code
+      FROM brands
+      WHERE is_active = true AND deleted_at IS NULL
+      ORDER BY name ASC
+    `;
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+async function getBrandById(id: string): Promise<BrandRow | null> {
+  try {
+    const rows = await prisma.$queryRaw<BrandRow[]>`
+      SELECT id::text, name, code FROM brands WHERE id = ${id}::uuid LIMIT 1
+    `;
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createProductRecord(data: ProductInput) {
+  let sku = data.sku;
+
+  if (!sku && data.brandId) {
+    const brand = await getBrandById(data.brandId);
+    if (brand) {
+      sku = await generateProductCode(brand.code, data.category);
+    }
+  } else if (!sku) {
+    sku = await generateProductCode("GEN", data.category);
+  }
+
   return prisma.product.create({
     data: {
-      sku: data.sku,
-      barcode: data.barcode,
+      sku,
+      brandId: data.brandId,
       name: data.name,
       description: data.description,
       category: data.category as ProductCategory,
@@ -38,7 +93,7 @@ export async function updateProductRecord(data: ProductUpdateInput) {
     where: { id: data.id },
     data: {
       sku: data.sku,
-      barcode: data.barcode,
+      brandId: data.brandId,
       name: data.name,
       description: data.description,
       category: data.category as ProductCategory,

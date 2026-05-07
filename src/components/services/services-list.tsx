@@ -110,23 +110,27 @@ export async function ServicesList({
                 </td>
                 <td className="px-4 py-3">{formatDecimal(record.quantity, 3)}</td>
                 <td className="px-4 py-3">{formatDate(record.serviceDate)}</td>
-                <td className="px-4 py-3">
+                <td className="relative w-40 px-4 py-3">
                   {record.consumptions.length ? (
-                    <details>
-                      <summary className="cursor-pointer text-primary">
+                    <details className="relative">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control border border-border bg-surface-muted px-2 py-0.5 text-xs font-medium text-foreground [&::-webkit-details-marker]:hidden">
                         {formatCurrency(consumptionCost)}
                       </summary>
-                      <ul className="mt-2 space-y-1">
-                        {record.consumptions.map((item) => (
-                          <li key={item.id}>
-                            {item.product.name}: {formatDecimal(item.quantity, 3)}{" "}
-                            {item.product.unitName}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-card border border-border bg-surface p-2 shadow-md">
+                        <ul className="space-y-1">
+                          {record.consumptions.map((item) => (
+                            <li className="text-xs text-foreground" key={item.id}>
+                              <span className="font-medium">{item.product.name}</span>
+                              <span className="text-muted-foreground">
+                                {" "}— {formatDecimal(item.quantity, 0)} {item.product.unitName}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </details>
                   ) : (
-                    "-"
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
               </tr>

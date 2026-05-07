@@ -24,6 +24,7 @@ export type OutputProductOption = {
   unitName: string;
   currentStock: string;
   salePrice: string | null;
+  brandName: string | null;
 };
 
 type Reason = 'SALE' | 'WASTE' | 'INTERNAL_USE';
@@ -80,7 +81,7 @@ export function OutputLineItems({
         name: product.name,
         category: product.category,
         unitName: product.unitName,
-        hint: productCategoryLabels[product.category],
+        hint: [product.brandName, productCategoryLabels[product.category]].filter(Boolean).join(' · '),
         currentStock: `Stock: ${product.currentStock} ${product.unitName}${
           product.salePrice ? ` - Venta S/ ${product.salePrice}` : ''
         }`,
@@ -214,13 +215,13 @@ export function OutputLineItems({
                 </span>
                 <input
                   className="input"
-                  min="0.001"
+                  min="1"
                   name="quantity"
                   onChange={(event) =>
                     updateRow(row.rowId, { quantity: event.target.value })
                   }
                   placeholder="0"
-                  step="0.001"
+                  step="1"
                   type="number"
                   value={row.quantity}
                 />

@@ -42,7 +42,7 @@ export default async function ServicesPage({
     }),
     prisma.product.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, unitName: true, currentStock: true },
+      select: { id: true, name: true, unitName: true, currentStock: true, brand: { select: { name: true } } },
       orderBy: { name: 'asc' },
       take: 1000,
     }),
@@ -59,6 +59,7 @@ export default async function ServicesPage({
     name: product.name,
     unitName: product.unitName,
     currentStock: formatDecimal(product.currentStock, 3),
+    brandName: product.brand?.name ?? null,
   }));
 
   // Plain-object projection so the client form doesn't receive Prisma Decimals.

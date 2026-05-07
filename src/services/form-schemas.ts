@@ -14,7 +14,11 @@ const nonNegativeDecimal = decimalInput.nonnegative();
 export const productSchema = z.object({
   id: optionalText,
   sku: nullableText,
-  barcode: nullableText,
+  brandId: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v && v.length ? v : null)),
   name: z.string().trim().min(2),
   description: nullableText,
   category: z.enum(["SCHOOL_SUPPLIES", "BAZAAR", "SNACKS"]),
@@ -37,7 +41,7 @@ export const supplierSchema = z.object({
   phone: z.string().trim().min(5),
   contactName: z.string().trim().min(2),
   address: nullableText,
-  notes: nullableText,
+  notes: z.string().trim().default("").transform((v) => (v.length ? v : null)),
 });
 
 export const supplierUpdateSchema = supplierSchema.extend({
@@ -48,12 +52,12 @@ export const entrySchema = z.object({
   supplierId: z.string().uuid(),
   status: z.enum(["ORDERED", "RECEIVED"]),
   referenceNumber: nullableText,
-  notes: nullableText,
+  notes: z.string().trim().default("").transform((v) => (v.length ? v : null)),
 });
 
 export const outputSchema = z.object({
   reason: z.enum(["SALE", "WASTE", "INTERNAL_USE"]),
-  notes: nullableText,
+  notes: z.string().trim().default("").transform((v) => (v.length ? v : null)),
 });
 
 export const serviceTypeSchema = z.object({
@@ -76,7 +80,7 @@ export const serviceRecordSchema = z.object({
   serviceDate: z.string().trim().min(1),
   deliveredAt: nullableText,
   externalVendorName: nullableText,
-  notes: nullableText,
+  notes: z.string().trim().default("").transform((v) => (v.length ? v : null)),
 });
 
 export const userCreateSchema = z.object({

@@ -46,10 +46,6 @@ export function EntryForm({
 
       <EntryLineItems products={products} />
 
-      <Field className="block" label="Notas">
-        <textarea className="input min-h-20 py-2" name="notes" />
-      </Field>
-
       <div className="flex justify-end">
         <SubmitButton>
           <Plus aria-hidden="true" className="h-4 w-4" />

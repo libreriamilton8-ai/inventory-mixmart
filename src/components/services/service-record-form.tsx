@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import {
   Field,
   ProductCombobox,
   type ProductComboboxOption,
-} from "@/components/forms";
-import { SubmitButton } from "@/components/shared";
-import { Select } from "@/components/ui/select";
-import { serviceKindLabels } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { createServiceRecord } from "@/server/actions";
-import type { ServiceKind } from "../../../prisma/generated/client";
+} from '@/components/forms';
+import { SubmitButton } from '@/components/shared';
+import { Select } from '@/components/ui/select';
+import { serviceKindLabels } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { createServiceRecord } from '@/server/actions';
+import type { ServiceKind } from '../../../prisma/generated/client';
 
 type ServiceTypeOption = {
   id: string;
@@ -26,6 +26,7 @@ type ConsumptionProductOption = {
   name: string;
   unitName: string;
   currentStock: string;
+  brandName: string | null;
 };
 
 type ConsumptionRow = {
@@ -37,14 +38,16 @@ type ConsumptionRow = {
 let nextRowId = 0;
 const newConsumptionRow = (): ConsumptionRow => ({
   rowId: ++nextRowId,
-  productId: "",
-  quantity: "",
+  productId: '',
+  quantity: '',
 });
 
 function dateTimeLocalValue() {
   const now = new Date();
   const offset = now.getTimezoneOffset();
-  return new Date(now.getTime() - offset * 60 * 1000).toISOString().slice(0, 16);
+  return new Date(now.getTime() - offset * 60 * 1000)
+    .toISOString()
+    .slice(0, 16);
 }
 
 export function ServiceRecordForm({
@@ -60,6 +63,7 @@ export function ServiceRecordForm({
     id: product.id,
     name: product.name,
     unitName: product.unitName,
+    hint: product.brandName ?? undefined,
     currentStock: `Stock: ${product.currentStock} ${product.unitName}`,
   }));
 
@@ -100,10 +104,10 @@ export function ServiceRecordForm({
           <input
             className="input"
             defaultValue="1"
-            min="0.001"
+            min="1"
             name="quantity"
             required
-            step="0.001"
+            step="1"
             type="number"
           />
         </Field>
@@ -126,37 +130,26 @@ export function ServiceRecordForm({
             placeholder="Nombre del proveedor si es tercerizado"
           />
         </Field>
-        <Field className="md:col-span-2" label="Notas">
-          <textarea className="input min-h-20 py-2" name="notes" />
-        </Field>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          className="btn btn-soft h-9 px-3 text-xs"
+          onClick={addRow}
+          type="button"
+        >
+          <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+          Agregar
+        </button>
       </div>
 
       <div className="rounded-card border border-border">
-        <div className="flex items-center justify-between border-b border-border bg-surface px-3 py-2">
-          <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Insumos consumidos
-            </h4>
-            <p className="text-[11.5px] text-muted-foreground">
-              Opcional. Agrega los productos del inventario que se gastaron.
-            </p>
-          </div>
-          <button
-            className="btn btn-soft h-9 px-3 text-xs"
-            onClick={addRow}
-            type="button"
-          >
-            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-            Agregar insumo
-          </button>
-        </div>
-
         {rows.length ? (
           <div className="divide-y divide-border">
             {rows.map((row, index) => (
               <div
                 className={cn(
-                  "grid gap-2 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto] md:items-end",
+                  'grid gap-2 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto] md:items-end',
                 )}
                 key={row.rowId}
               >
@@ -168,7 +161,7 @@ export function ServiceRecordForm({
                     ariaLabel={`Insumo ${index + 1}`}
                     name="supplyProductId"
                     onSelect={(option) =>
-                      updateRow(row.rowId, { productId: option?.id ?? "" })
+                      updateRow(row.rowId, { productId: option?.id ?? '' })
                     }
                     options={productOptions}
                     placeholder="Buscar insumo..."
@@ -180,13 +173,13 @@ export function ServiceRecordForm({
                   </span>
                   <input
                     className="input"
-                    min="0.001"
+                    min="1"
                     name="supplyQuantity"
                     onChange={(event) =>
                       updateRow(row.rowId, { quantity: event.target.value })
                     }
                     placeholder="0"
-                    step="0.001"
+                    step="1"
                     type="number"
                     value={row.quantity}
                   />

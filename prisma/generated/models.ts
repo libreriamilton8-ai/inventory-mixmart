@@ -10,6 +10,7 @@
  */
 export type * from './models/User'
 export type * from './models/Supplier'
+export type * from './models/Brand'
 export type * from './models/Product'
 export type * from './models/ProductSupplier'
 export type * from './models/StockEntry'

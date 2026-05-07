@@ -1,7 +1,7 @@
-import { Pencil, Plus, Search } from "lucide-react";
-import { Fragment, Suspense } from "react";
+import { Pencil, Plus, Search } from 'lucide-react';
+import { Fragment, Suspense } from 'react';
 
-import { SupplierForm } from "@/components/suppliers/supplier-form";
+import { SupplierForm } from '@/components/suppliers/supplier-form';
 import {
   DataTable,
   EmptyState,
@@ -13,26 +13,27 @@ import {
   RecordStatusBadge,
   Section,
   SectionHeader,
-} from "@/components/shared";
-import { FormModal } from "@/components/ui/modal";
-import { Select } from "@/components/ui/select";
-import { formatCurrency, formatDateOnly } from "@/lib/format";
-import { sumLineCost } from "@/lib/calc";
-import { requireActiveUser } from "@/lib/auth";
-import { buildPaginationMeta, readPagination } from "@/lib/pagination";
-import { canManageCatalog } from "@/lib/permissions";
-import prisma from "@/lib/prisma";
+} from '@/components/shared';
+import { FormModal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { formatCurrency, formatDateOnly } from '@/lib/format';
+import { sumLineCost } from '@/lib/calc';
+import { requireActiveUser } from '@/lib/auth';
+import { buildPaginationMeta, readPagination } from '@/lib/pagination';
+import { canManageCatalog } from '@/lib/permissions';
+import prisma from '@/lib/prisma';
 import {
   deactivateSupplier,
   reactivateSupplier,
   restoreSupplier,
   softDeleteSupplier,
-} from "@/server/actions";
+} from '@/server/actions';
+import { FilterBar, SearchFilter, SelectFilter } from '@/components/filters';
 
 type SuppliersPageProps = {
   searchParams: Promise<{
     q?: string;
-    status?: "active" | "inactive" | "deleted";
+    status?: 'active' | 'inactive' | 'deleted';
     success?: string;
     page?: string;
     pageSize?: string;
@@ -50,10 +51,10 @@ export default function SuppliersPage({ searchParams }: SuppliersPageProps) {
 }
 
 async function SuppliersContent({ searchParams }: SuppliersPageProps) {
-  const user = await requireActiveUser("/suppliers");
+  const user = await requireActiveUser('/suppliers');
   const params = await searchParams;
-  const q = params.q?.trim() ?? "";
-  const status = params.status ?? "active";
+  const q = params.q?.trim() ?? '';
+  const status = params.status ?? 'active';
   const canManage = canManageCatalog(user.role);
   const pagination = readPagination(params);
 
@@ -61,15 +62,15 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
     ...(q
       ? {
           OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { ruc: { contains: q, mode: "insensitive" as const } },
-            { contactName: { contains: q, mode: "insensitive" as const } },
+            { name: { contains: q, mode: 'insensitive' as const } },
+            { ruc: { contains: q, mode: 'insensitive' as const } },
+            { contactName: { contains: q, mode: 'insensitive' as const } },
           ],
         }
       : {}),
-    ...(status === "inactive"
+    ...(status === 'inactive'
       ? { isActive: false }
-      : status === "deleted"
+      : status === 'deleted'
         ? { deletedAt: { not: null } }
         : { isActive: true }),
   };
@@ -85,14 +86,14 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
           },
         },
         stockEntries: {
-          orderBy: { orderedAt: "desc" },
+          orderBy: { orderedAt: 'desc' },
           take: 3,
           include: {
             items: { select: { quantity: true, unitCost: true } },
           },
         },
       },
-      orderBy: [{ isActive: "desc" }, { name: "asc" }],
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
       skip: pagination.skip,
       take: pagination.take,
     }),
@@ -102,17 +103,17 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
   const meta = buildPaginationMeta(totalItems, pagination);
 
   const headers = [
-    "Proveedor",
-    "Contacto",
-    "Productos",
-    "Compras",
-    "Estado",
-    ...(canManage ? ["Acciones"] : []),
+    'Proveedor',
+    'Contacto',
+    'Productos',
+    'Compras',
+    'Estado',
+    ...(canManage ? ['Acciones'] : []),
   ];
   const colSpan = canManage ? 6 : 5;
 
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader
         action={
           canManage ? (
@@ -134,40 +135,29 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
       />
 
       {params.success ? (
-        <FlashMessage type="success">Proveedor guardado correctamente.</FlashMessage>
+        <FlashMessage type="success">
+          Proveedor guardado correctamente.
+        </FlashMessage>
       ) : null}
 
-      <Section className="mb-5">
-        <SectionHeader title="Filtros" />
-        <form
-          action="/suppliers"
-          className="grid gap-3 p-4 md:grid-cols-[1fr_180px_auto]"
-        >
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Buscar</span>
-            <input
-              className="input"
-              defaultValue={q}
-              name="q"
-              placeholder="Nombre, RUC o contacto"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Estado</span>
-            <Select defaultValue={status} name="status">
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
-              {canManage ? <option value="deleted">Eliminados</option> : null}
-            </Select>
-          </label>
-          <div className="flex items-end">
-            <button className="btn btn-primary w-full" type="submit">
-              <Search aria-hidden="true" className="h-4 w-4" />
-              Filtrar
-            </button>
-          </div>
-        </form>
-      </Section>
+      <FilterBar>
+        <SearchFilter
+          label="Buscar"
+          name="q"
+          placeholder="Nombre, RUC o contacto"
+        />
+
+        <SelectFilter
+          allLabel="Todos"
+          label="Estado"
+          name="status"
+          options={[
+            { label: 'Activos', value: 'active' },
+            { label: 'Inactivos', value: 'inactive' },
+            ...(canManage ? [{ label: 'Eliminados', value: 'deleted' }] : []),
+          ]}
+        />
+      </FilterBar>
 
       <Section>
         {suppliers.length ? (
@@ -176,16 +166,22 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
               <Fragment key={supplier.id}>
                 <tr>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{supplier.name}</p>
+                    <p className="font-medium text-foreground">
+                      {supplier.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       RUC {supplier.ruc}
                     </p>
                   </td>
                   <td className="px-4 py-3">
                     <p>{supplier.contactName}</p>
-                    <p className="text-xs text-muted-foreground">{supplier.phone}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {supplier.phone}
+                    </p>
                   </td>
-                  <td className="px-4 py-3">{supplier._count.productSuppliers}</td>
+                  <td className="px-4 py-3">
+                    {supplier._count.productSuppliers}
+                  </td>
                   <td className="px-4 py-3">{supplier._count.stockEntries}</td>
                   <td className="px-4 py-3">
                     <RecordStatusBadge
@@ -204,7 +200,10 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
                             triggerClassName="btn-soft"
                             trigger={
                               <>
-                                <Pencil aria-hidden="true" className="h-4 w-4" />
+                                <Pencil
+                                  aria-hidden="true"
+                                  className="h-4 w-4"
+                                />
                                 Editar
                               </>
                             }
@@ -231,10 +230,10 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <div className="rounded-control border border-border bg-surface p-3">
                           <p className="text-sm text-muted-foreground">
-                            {supplier.address || "Sin direccion registrada"}
+                            {supplier.address || 'Sin direccion registrada'}
                           </p>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            {supplier.notes || "Sin notas"}
+                            {supplier.notes || 'Sin notas'}
                           </p>
                         </div>
                         <div className="rounded-control border border-border bg-surface p-3">
@@ -273,6 +272,6 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
         )}
         <PaginationBar {...meta} />
       </Section>
-    </>
+    </div>
   );
 }

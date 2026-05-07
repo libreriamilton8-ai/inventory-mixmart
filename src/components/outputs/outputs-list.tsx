@@ -94,28 +94,29 @@ export async function OutputsList({
                   <td className="px-4 py-3">
                     {output.createdBy.firstName} {output.createdBy.lastName}
                   </td>
-                  <td className="px-4 py-3">
-                    <details className="[&_summary::-webkit-details-marker]:hidden">
-                      <summary className="inline-flex cursor-pointer list-none items-center rounded-control border border-primary-200 bg-primary-50 px-2 py-1 text-primary">
-                        {output.items.length} items
+                  <td className="relative w-40 px-4 py-3">
+                    <details className="relative [&_summary::-webkit-details-marker]:hidden">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary">
+                        {output.items.length} item{output.items.length !== 1 ? "s" : ""}
                       </summary>
-                      <ul className="popover-window mt-2 space-y-2">
-                        {output.items.map((item) => (
-                          <li
-                            className="flex flex-wrap items-center gap-2"
-                            key={item.id}
-                          >
-                            <span>
-                              {item.product.name}: {formatDecimal(item.quantity, 3)}{" "}
-                              {item.product.unitName}
-                            </span>
-                            <ProductCategoryBadge
-                              category={item.product.category}
-                              className="min-h-6 rounded-control px-2 py-0.5"
-                            />
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-card border border-border bg-surface p-2 shadow-md">
+                        <ul className="space-y-1.5">
+                          {output.items.map((item) => (
+                            <li className="flex items-center gap-2" key={item.id}>
+                              <span className="min-w-0 flex-1 text-xs">
+                                <span className="font-medium">{item.product.name}</span>
+                                <span className="text-muted-foreground">
+                                  {" "}— {formatDecimal(item.quantity, 0)} {item.product.unitName}
+                                </span>
+                              </span>
+                              <ProductCategoryBadge
+                                category={item.product.category}
+                                className="shrink-0 min-h-5 rounded-control px-1.5 py-0 text-[10px]"
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </details>
                   </td>
                   <td className="px-4 py-3">{formatCurrency(cost)}</td>

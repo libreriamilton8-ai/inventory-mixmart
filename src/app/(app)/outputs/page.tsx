@@ -41,6 +41,7 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
         unitName: true,
         currentStock: true,
         salePrice: true,
+        brand: { select: { name: true } },
       },
       take: 300,
     }),
@@ -73,6 +74,7 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
                 salePrice: product.salePrice
                   ? formatDecimal(product.salePrice, 2)
                   : null,
+                brandName: product.brand?.name ?? null,
               }))}
             />
           </FormModal>

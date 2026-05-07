@@ -409,6 +409,39 @@ async function ensureServiceRecord({
   });
 }
 
+async function seedBrands() {
+  const brands = [
+    { name: 'Artesco', code: 'ART' },
+    { name: 'Norma', code: 'NOR' },
+    { name: 'Faber-Castell', code: 'FAB' },
+    { name: 'Pilot', code: 'PIL' },
+    { name: 'Stabilo', code: 'STA' },
+    { name: 'Atlas', code: 'ATL' },
+    { name: 'BIC', code: 'BIC' },
+    { name: 'Pelikan', code: 'PEL' },
+    { name: '3M', code: '3M_' },
+    { name: 'Generico', code: 'GEN' },
+  ];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const brandDelegate = (prisma as any).brand as {
+    upsert: (args: {
+      where: { code: string };
+      create: { name: string; code: string };
+      update: { name: string; isActive: boolean };
+    }) => Promise<void>;
+  };
+
+  for (const brand of brands) {
+    await brandDelegate.upsert({
+      where: { code: brand.code },
+      create: brand,
+      update: { name: brand.name, isActive: true },
+    });
+  }
+  console.log(`  - brands (${brands.length})`);
+}
+
 async function main() {
   if (!ADMIN_PASSWORD || !DEMO_PASSWORD) {
     throw new Error(
@@ -453,6 +486,8 @@ async function main() {
     dni: '70000003',
     isActive: false,
   });
+
+  await seedBrands();
 
   const supplierSchool = await upsertSupplier({
     ruc: '20481234561',

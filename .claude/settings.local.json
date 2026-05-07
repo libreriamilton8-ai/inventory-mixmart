@@ -12,7 +12,11 @@
       "PowerShell(\"ok\")",
       "PowerShell(cmd /c \"cd /d D:\\\\inventory-mixmart && node node_modules\\\\typescript\\\\bin\\\\tsc --noEmit 2>&1\" 2>&1)",
       "Read(//d/inventory-mixmart/**)",
-      "PowerShell(cmd /c \"cd /d D:\\\\inventory-mixmart && npm run db:seed:bulk 2>&1\" 2>&1)"
+      "PowerShell(cmd /c \"cd /d D:\\\\inventory-mixmart && npm run db:seed:bulk 2>&1\" 2>&1)",
+      "Bash(node -e \"const { execSync } = require\\('child_process'\\); try { const out = execSync\\('npx prisma generate', { cwd: 'd:/inventory-mixmart', timeout: 60000, encoding: 'utf8' }\\); console.log\\(out\\); } catch\\(e\\) { console.error\\(e.stdout\\); console.error\\(e.stderr\\); }\")",
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\inventory-mixmart\\\\.next\")",
+      "Bash(cd /d \"d:\\\\inventory-mixmart\")",
+      "Bash(rmdir /s /q .next)"
     ]
   }
 }

@@ -68,7 +68,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       ) : null}
 
       <FilterBar>
-        <SearchFilter label="Buscar" name="q" placeholder="Nombre, SKU o codigo" />
+        <SearchFilter label="Buscar" name="q" placeholder="Nombre o codigo" />
         <SelectFilter
           allLabel="Todas"
           label="Categoria"

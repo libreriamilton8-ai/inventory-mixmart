@@ -4,6 +4,7 @@ import { Field } from '@/components/forms';
 import { SubmitButton } from '@/components/shared';
 import { Select } from '@/components/ui/select';
 import { productCategoryLabels } from '@/lib/format';
+import { getBrands } from '@/services';
 import { createProduct, updateProduct } from '@/server/actions';
 import type { ProductCategory } from '../../../prisma/generated/client';
 
@@ -12,7 +13,7 @@ const categories: ProductCategory[] = ['SCHOOL_SUPPLIES', 'BAZAAR', 'SNACKS'];
 export type ProductFormValues = {
   id: string;
   sku: string | null;
-  barcode: string | null;
+  brandId: string | null;
   name: string;
   description: string | null;
   category: ProductCategory;
@@ -22,7 +23,12 @@ export type ProductFormValues = {
   minimumStock: unknown;
 };
 
-export function ProductForm({ product }: { product?: ProductFormValues }) {
+export async function ProductForm({
+  product,
+}: {
+  product?: ProductFormValues;
+}) {
+  const brands = await getBrands();
   const isEdit = Boolean(product);
 
   return (
@@ -61,28 +67,18 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
             </Select>
           </Field>
         </div>
-      </fieldset>
-
-      <fieldset className="space-y-3">
-        <legend className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Identificacion
-        </legend>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Field label="SKU interno">
-            <input
-              className="input"
-              defaultValue={product?.sku ?? ''}
-              name="sku"
-              placeholder="Ej. CUA-A4-100"
-            />
-          </Field>
-          <Field label="Codigo barras">
-            <input
-              className="input"
-              defaultValue={product?.barcode ?? ''}
-              name="barcode"
-              placeholder="EAN/UPC del producto"
-            />
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field label="Marca">
+            <Select defaultValue={product?.brandId ?? ''} name="brandId">
+              <option value="">Sin marca</option>
+              {brands.map(
+                (brand: { id: string; name: string; code: string }) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ),
+              )}
+            </Select>
           </Field>
           <Field label="Unidad">
             <input
@@ -91,6 +87,30 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
               name="unitName"
               placeholder="unidad, paquete, kg..."
               required
+            />
+          </Field>
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-3">
+        <legend className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Identificacion
+        </legend>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field label="Codigo">
+            <input
+              className="input"
+              defaultValue={product?.sku ?? ''}
+              name="sku"
+              placeholder="Se genera automaticamente si lo dejas vacio"
+            />
+          </Field>
+          <Field label="Descripcion">
+            <input
+              className="input"
+              defaultValue={product?.description ?? ''}
+              name="description"
+              placeholder="Detalles, presentacion, etc."
             />
           </Field>
         </div>
@@ -132,7 +152,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
               name="minimumStock"
               placeholder="0"
               required
-              step="0.001"
+              step="1"
               type="number"
             />
           </Field>
@@ -142,15 +162,6 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           ajustarlos en cada operacion sin tocar el catalogo.
         </p>
       </fieldset>
-
-      {/* <Field label="Descripcion">
-        <textarea
-          className="input min-h-20 py-2"
-          defaultValue={product?.description ?? ""}
-          name="description"
-          placeholder="Detalles, marca, presentacion, etc."
-        />
-      </Field> */}
 
       <div className="flex justify-end">
         <SubmitButton>
