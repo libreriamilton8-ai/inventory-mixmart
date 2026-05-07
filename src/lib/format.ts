@@ -50,10 +50,19 @@ export function formatDate(value: Date | string | null | undefined) {
     return "-";
   }
 
+  const date = new Date(value);
+  const isCurrentYear = date.getFullYear() === new Date().getFullYear();
+
   return new Intl.DateTimeFormat("es-PE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+    day: "numeric",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "short",
+    ...(isCurrentYear ? {} : { year: "numeric" }),
+  })
+    .format(date)
+    .replace(/\./g, "");
 }
 
 export function formatDateOnly(value: Date | string | null | undefined) {
