@@ -75,6 +75,9 @@ export function FilterBar({ children, className }: FilterBarProps) {
       } else {
         next.set(key, value);
       }
+      if (key !== 'page' && key !== 'pageSize') {
+        next.delete('page');
+      }
       replace(next);
     },
     [searchParams, replace],
@@ -90,6 +93,9 @@ export function FilterBar({ children, className }: FilterBarProps) {
           next.set(key, value);
         }
       });
+      if (Object.keys(entries).some((key) => key !== 'page' && key !== 'pageSize')) {
+        next.delete('page');
+      }
       replace(next);
     },
     [searchParams, replace],

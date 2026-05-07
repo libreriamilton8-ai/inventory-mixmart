@@ -119,6 +119,7 @@ async function SuppliersContent({ searchParams }: SuppliersPageProps) {
         action={
           canManage ? (
             <FormModal
+              closeOnOverlayClick={false}
               size="lg"
               title="Nuevo proveedor"
               description="Registra los datos para vincularlo a entradas y productos."

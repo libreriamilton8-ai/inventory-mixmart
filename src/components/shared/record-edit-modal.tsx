@@ -24,6 +24,7 @@ export function RecordEditModal({
 }: RecordEditModalProps) {
   return (
     <FormModal
+      closeOnOverlayClick={false}
       description={description}
       size={size}
       title={title}

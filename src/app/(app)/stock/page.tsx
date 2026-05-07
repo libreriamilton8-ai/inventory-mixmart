@@ -25,14 +25,9 @@ export default async function StockPage({ searchParams }: StockPageProps) {
   await requireActiveUser('/stock');
   const params = await searchParams;
 
-  const filterKey = `${params.q ?? ''}|${params.category ?? ''}|${params.status ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
-
   return (
     <div className="space-y-3">
-      <Suspense
-        fallback={<TableSkeleton columns={7} rows={6} />}
-        key={filterKey}
-      >
+      <Suspense fallback={<TableSkeleton columns={7} rows={6} />}>
         <StockTable
           filters={
             <FilterBar>

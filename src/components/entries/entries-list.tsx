@@ -7,6 +7,8 @@ import {
   EmptyState,
   IdActionForm,
   PaginationBar,
+  ProductCategoryBadge,
+  RecordDetailModal,
   Section,
   StatusBadge,
   iconBtnGood,
@@ -21,7 +23,10 @@ import {
 import { buildPaginationMeta, readPagination } from '@/lib/pagination';
 import prisma from '@/lib/prisma';
 import { receiveStockEntry } from '@/server/actions';
-import type { StockEntryStatus } from '../../../prisma/generated/client';
+import type {
+  ProductCategory,
+  StockEntryStatus,
+} from '../../../prisma/generated/client';
 
 export type EntriesSearchParams = {
   q?: string;
@@ -61,7 +66,7 @@ export async function EntriesList({
         createdBy: { select: { firstName: true, lastName: true } },
         items: {
           include: {
-            product: { select: { name: true, unitName: true } },
+            product: { select: { name: true, unitName: true, category: true } },
           },
         },
       },
@@ -125,57 +130,172 @@ export async function EntriesList({
               </p>
             </td>
             <td className="relative w-40 px-4 py-3">
-              <details className="relative">
-                <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary [&::-webkit-details-marker]:hidden">
-                  {entry.items.length} item{entry.items.length !== 1 ? 's' : ''}
-                </summary>
-                <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-card border border-border bg-surface p-2 shadow-md">
-                  <ul className="space-y-1">
-                    {entry.items.map((item) => (
-                      <li className="text-xs text-foreground" key={item.id}>
-                        <span className="font-medium">{item.product.name}</span>
-                        <span className="text-muted-foreground">
-                          {' '}
-                          — {formatDecimal(item.quantity, 0)} ×{' '}
-                          {formatCurrency(item.unitCost)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
+              <span className="inline-flex rounded-control border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary">
+                {entry.items.length} item{entry.items.length !== 1 ? 's' : ''}
+              </span>
             </td>
             <td className="px-4 py-3">
               {formatCurrency(sumLineCost(entry.items))}
             </td>
             <td className="px-4 py-3">
-              {entry.status === 'ORDERED' ? (
-                <ActionTip label="Recibir">
-                  <IdActionForm
-                    action={receiveStockEntry}
-                    className={iconBtnGood}
-                    id={entry.id}
-                    label="Recibir"
-                  >
-                    <PackageCheck aria-hidden="true" data-icon="icon" />
-                  </IdActionForm>
+              <div className="flex items-center gap-1">
+                <ActionTip label="Detalle">
+                  <RecordDetailModal title="Detalle entrada">
+                    <EntryDetail entry={entry} />
+                  </RecordDetailModal>
                 </ActionTip>
-              ) : (
-                <ActionTip label="Entrada recibida">
-                  <span
-                    aria-label="Entrada recibida"
-                    className={`${iconBtnGood} cursor-default`}
-                    role="img"
-                  >
-                    <SpellCheck aria-hidden="true" data-icon="icon" />
-                  </span>
-                </ActionTip>
-              )}
+                {entry.status === 'ORDERED' ? (
+                  <ActionTip label="Recibir">
+                    <IdActionForm
+                      action={receiveStockEntry}
+                      className={iconBtnGood}
+                      id={entry.id}
+                      label="Recibir"
+                    >
+                      <PackageCheck aria-hidden="true" data-icon="icon" />
+                    </IdActionForm>
+                  </ActionTip>
+                ) : (
+                  <ActionTip label="Entrada recibida">
+                    <span
+                      aria-label="Entrada recibida"
+                      className={`${iconBtnGood} cursor-default`}
+                      role="img"
+                    >
+                      <SpellCheck aria-hidden="true" data-icon="icon" />
+                    </span>
+                  </ActionTip>
+                )}
+              </div>
             </td>
           </tr>
         ))}
       </DataTable>
       <PaginationBar {...meta} />
     </Section>
+  );
+}
+
+type EntryDetailProps = {
+  entry: {
+    referenceNumber: string | null;
+    status: StockEntryStatus;
+    orderedAt: Date;
+    receivedAt: Date | null;
+    notes: string | null;
+    supplier: { name: string };
+    createdBy: { firstName: string; lastName: string };
+    items: {
+      id: string;
+      quantity: { toNumber: () => number } | number | string;
+      unitCost: { toNumber: () => number } | number | string;
+      product: {
+        name: string;
+        unitName: string;
+        category: ProductCategory;
+      };
+    }[];
+  };
+};
+
+function EntryDetail({ entry }: EntryDetailProps) {
+  const total = sumLineCost(entry.items);
+
+  return (
+    <div className="space-y-4 p-5">
+      <div className="grid gap-3 md:grid-cols-2">
+        <DetailBox
+          label="Referencia"
+          value={entry.referenceNumber || 'Sin referencia'}
+        />
+        <DetailBox label="Proveedor" value={entry.supplier.name} />
+        <DetailBox label="Estado" value={stockEntryStatusLabels[entry.status]} />
+        <DetailBox
+          label="Registrado por"
+          value={`${entry.createdBy.firstName} ${entry.createdBy.lastName}`}
+        />
+        <DetailBox label="Ordenada" value={formatDate(entry.orderedAt)} />
+        <DetailBox
+          label="Recibida"
+          value={entry.receivedAt ? formatDate(entry.receivedAt) : 'Pendiente'}
+        />
+        <DetailBox
+          className="md:col-span-2"
+          label="Notas"
+          value={entry.notes || 'Sin notas'}
+        />
+      </div>
+
+      <div className="rounded-control border border-border bg-surface">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+          <h3 className="text-sm font-semibold text-foreground">Productos</h3>
+          <span className="text-sm font-semibold text-foreground">
+            {formatCurrency(total)}
+          </span>
+        </div>
+        <ul className="divide-y divide-border">
+          {entry.items.map((item) => (
+            <li className="px-3 py-2" key={item.id}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {item.product.name}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatDecimal(item.quantity, 3)} {item.product.unitName}
+                  </p>
+                </div>
+                <ProductCategoryBadge
+                  category={item.product.category}
+                  className="min-h-6 rounded-control px-2 py-0.5"
+                />
+              </div>
+              <div className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
+                <MiniMetric
+                  label="Costo unitario"
+                  value={formatCurrency(item.unitCost)}
+                />
+                <MiniMetric
+                  label="Subtotal"
+                  value={formatCurrency(sumLineCost([item]))}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function DetailBox({
+  className,
+  label,
+  value,
+}: {
+  className?: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 rounded-control border border-border bg-surface-muted px-3 py-2 text-sm text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-control border border-border bg-surface-muted px-2 py-1.5">
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </span>
+      <span className="mt-0.5 block font-medium text-foreground">{value}</span>
+    </div>
   );
 }

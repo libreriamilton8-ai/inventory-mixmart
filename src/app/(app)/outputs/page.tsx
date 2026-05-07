@@ -47,6 +47,7 @@ export default async function OutputsPage({ searchParams }: OutputsPageProps) {
       <PageHeader
         action={
           <FormModal
+            closeOnOverlayClick={false}
             size="xl"
             title="Nueva salida"
             description="Registra ventas, mermas o uso interno."

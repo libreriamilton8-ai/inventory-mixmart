@@ -22,6 +22,7 @@ type FormModalProps = {
   size?: ModalSize;
   triggerAriaLabel?: string;
   triggerClassName?: string;
+  closeOnOverlayClick?: boolean;
 };
 
 export function FormModal({
@@ -32,6 +33,7 @@ export function FormModal({
   size = "md",
   triggerAriaLabel,
   triggerClassName,
+  closeOnOverlayClick = true,
 }: FormModalProps) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
@@ -69,7 +71,11 @@ export function FormModal({
           aria-labelledby={titleId}
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-md animate-overlay-in sm:items-center"
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            if (closeOnOverlayClick) {
+              setOpen(false);
+            }
+          }}
           role="dialog"
         >
           <div

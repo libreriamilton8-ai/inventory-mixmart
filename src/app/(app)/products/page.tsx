@@ -33,8 +33,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ]);
   const canManage = canManageCatalog(user.role);
 
-  const filterKey = `${params.category ?? ''}|${params.brandId ?? ''}|${params.q ?? ''}|${params.status ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
-
   const statusOptions = [
     { label: 'Activos', value: 'active' },
     { label: 'Inactivos', value: 'inactive' },
@@ -47,6 +45,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         action={
           canManage ? (
             <FormModal
+              closeOnOverlayClick={false}
               size="lg"
               title="Nuevo producto"
               description="Define los datos basicos y de inventario."
@@ -69,10 +68,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </FlashMessage>
       ) : null}
 
-      <Suspense
-        fallback={<TableSkeleton columns={6} rows={6} />}
-        key={filterKey}
-      >
+      <Suspense fallback={<TableSkeleton columns={6} rows={6} />}>
         <ProductsList
           canManage={canManage}
           filters={

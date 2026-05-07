@@ -74,14 +74,13 @@ export default async function ServicesPage({
     value: type.id,
   }));
 
-  const filterKey = `${params.from ?? ''}|${params.to ?? ''}|${params.kind ?? ''}|${params.status ?? ''}|${params.serviceTypeId ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
-
   return (
     <div className="space-y-3">
       <PageHeader
         action={
           <div className="flex flex-wrap gap-2">
             <FormModal
+              closeOnOverlayClick={false}
               size="lg"
               title="Registrar servicio"
               description="Registra un servicio."
@@ -100,6 +99,7 @@ export default async function ServicesPage({
 
             {canManage ? (
               <FormModal
+                closeOnOverlayClick={false}
                 size="lg"
                 title="Nuevo tipo de servicio"
                 description="Crea un tipo de servicio."
@@ -129,10 +129,7 @@ export default async function ServicesPage({
         </FlashMessage>
       ) : null}
 
-      <Suspense
-        fallback={<TableSkeleton columns={7} rows={6} />}
-        key={filterKey}
-      >
+      <Suspense fallback={<TableSkeleton columns={7} rows={6} />}>
         <ServicesList
           filters={
             <FilterBar>

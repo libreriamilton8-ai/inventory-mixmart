@@ -58,13 +58,12 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     value: supplier.id,
   }));
 
-  const filterKey = `${params.from ?? ''}|${params.to ?? ''}|${params.q ?? ''}|${params.status ?? ''}|${params.supplierId ?? ''}|${params.page ?? ''}|${params.pageSize ?? ''}`;
-
   return (
     <div className="space-y-3">
       <PageHeader
         action={
           <FormModal
+            closeOnOverlayClick={false}
             size="xl"
             title="Nueva entrada"
             description="Registra una orden o recepcion de mercaderia."
@@ -86,10 +85,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
         </FlashMessage>
       ) : null}
 
-      <Suspense
-        fallback={<TableSkeleton columns={7} rows={6} />}
-        key={filterKey}
-      >
+      <Suspense fallback={<TableSkeleton columns={7} rows={6} />}>
         <EntriesList
           filters={
             <FilterBar>

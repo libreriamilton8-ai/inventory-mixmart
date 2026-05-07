@@ -62,6 +62,7 @@ async function UsersContent({ searchParams }: UsersPageProps) {
       <PageHeader
         action={
           <FormModal
+            closeOnOverlayClick={false}
             size="lg"
             title="Nuevo usuario"
             description="Crea cuentas para administradores o trabajadores."
