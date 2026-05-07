@@ -21,6 +21,8 @@ type SelectProps = Omit<
   "className" | "size"
 > & {
   className?: string;
+  compactLabel?: string;
+  leadingIcon?: ReactNode;
   onValueChange?: (value: string) => void;
   placeholder?: string;
   variant?: "default" | "ink";
@@ -120,9 +122,11 @@ function flatOptions(items: SelectItem[]) {
 export function Select({
   children,
   className,
+  compactLabel,
   defaultValue,
   disabled,
   id,
+  leadingIcon,
   name,
   onChange,
   onValueChange,
@@ -251,9 +255,17 @@ export function Select({
         ref={triggerRef}
         type="button"
       >
-        <span className="min-w-0 truncate">
+        {leadingIcon ? (
+          <span className={cn("shrink-0", compactLabel ? "sm:hidden" : "")}>
+            {leadingIcon}
+          </span>
+        ) : null}
+        <span className={cn("min-w-0 truncate", compactLabel ? "hidden sm:block" : "")}>
           {selectedOption?.label || placeholder}
         </span>
+        {compactLabel ? (
+          <span className="min-w-0 truncate sm:hidden">{compactLabel}</span>
+        ) : null}
         <ChevronDown
           aria-hidden="true"
           className={cn("h-4 w-4 shrink-0 transition", open ? "rotate-180" : "")}

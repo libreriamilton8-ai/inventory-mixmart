@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { useRef, useState } from 'react';
+import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react';
 
-import { Select } from "@/components/ui/select";
+import { Select } from '@/components/ui/select';
 import {
   DATE_RANGE_KEYS,
   DATE_RANGE_LABELS,
   type DateRangeKey,
-} from "@/lib/date-range";
-import { formatCurrency } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import type { DashboardFinancialSummary } from "@/services/dashboard.service";
+} from '@/lib/date-range';
+import { formatCurrency } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import type { DashboardFinancialSummary } from '@/services/dashboard.service';
 
 type FinancialSummaryCardProps = {
   entriesToday: number;
@@ -35,10 +35,10 @@ export function FinancialSummaryCard({
   const [failed, setFailed] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const positive = summary.revenueChange >= 0;
-  const todayLabel = new Intl.DateTimeFormat("es-PE", {
-    day: "2-digit",
-    month: "short",
-    weekday: "long",
+  const todayLabel = new Intl.DateTimeFormat('es-PE', {
+    day: '2-digit',
+    month: 'short',
+    weekday: 'long',
   }).format(new Date());
 
   const loadRange = async (rangeKey: string) => {
@@ -59,19 +59,19 @@ export function FinancialSummaryCard({
       const response = await fetch(
         `/api/dashboard/financial-summary?range=${nextRange}`,
         {
-          cache: "no-store",
+          cache: 'no-store',
           signal: controller.signal,
         },
       );
 
       if (!response.ok) {
-        throw new Error("Unable to load financial summary.");
+        throw new Error('Unable to load financial summary.');
       }
 
       const nextSummary = (await response.json()) as DashboardFinancialSummary;
       setSummary(nextSummary);
     } catch (error) {
-      if ((error as Error).name !== "AbortError") {
+      if ((error as Error).name !== 'AbortError') {
         setFailed(true);
       }
     } finally {
@@ -83,14 +83,23 @@ export function FinancialSummaryCard({
 
   return (
     <div className="grid gap-3.5 xl:grid-cols-[3fr_1fr]">
-      <section className="card-ink p-4 sm:p-7">
-        <div className="relative z-[1] flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <h2 className="font-display text-[21px] font-medium tracking-tight sm:text-[25px]">
+      <section className="card-ink p-3.5 sm:p-7">
+        <div className="relative z-1 flex items-start justify-between gap-3">
+          <h2 className="font-display text-[19px] font-medium leading-tight tracking-tight sm:text-[25px]">
             Resumen financiero
           </h2>
-          <div className="w-full sm:w-52">
+          <div className="w-28 shrink-0 sm:w-52">
             <Select
               aria-label="Rango del resumen financiero"
+              className="min-h-9 gap-1.5 rounded-[11px] px-2.5 py-1.5 text-[12px] sm:min-h-11 sm:gap-3 sm:px-3.5 sm:py-2 sm:text-sm"
+              compactLabel="Fecha"
+              leadingIcon={
+                <CalendarDays
+                  aria-hidden="true"
+                  className="size-3.5"
+                  strokeWidth={2.2}
+                />
+              }
               onValueChange={loadRange}
               value={summary.rangeKey}
               variant="ink"
@@ -106,24 +115,24 @@ export function FinancialSummaryCard({
 
         <div
           className={cn(
-            "relative z-[1] mt-5 grid gap-5 transition-opacity lg:grid-cols-[1.6fr_1fr] lg:items-start",
-            pending ? "opacity-60" : "opacity-100",
+            'relative z-1 mt-3 grid gap-3.5 transition-opacity sm:mt-5 sm:gap-5 lg:grid-cols-[1.6fr_1fr] lg:items-start',
+            pending ? 'opacity-60' : 'opacity-100',
           )}
         >
           <div>
             <p className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-ink-foreground/50">
               Ingresos
             </p>
-            <p className="mt-4 break-words font-display text-[42px] font-medium leading-[1.05] tracking-tight text-ink-foreground sm:mt-6 sm:text-[72px]">
+            <p className="mt-2.5 break-words font-display text-[36px] font-medium leading-[1.02] tracking-[0.015em] text-ink-foreground sm:mt-6 sm:text-[74px]">
               {formatCurrency(summary.revenue)}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11.5px] text-ink-foreground/60">
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-foreground/60 sm:mt-4 sm:gap-2 sm:text-[11.5px]">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11px] font-medium",
+                  'inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11px] font-medium',
                   positive
-                    ? "bg-accent-300/22 text-accent-300"
-                    : "bg-danger-500/18 text-danger-300",
+                    ? 'bg-accent-300/22 text-accent-300'
+                    : 'bg-danger-500/18 text-danger-300',
                 )}
               >
                 {positive ? (
@@ -131,7 +140,7 @@ export function FinancialSummaryCard({
                 ) : (
                   <TrendingDown className="h-3 w-3" strokeWidth={2.4} />
                 )}
-                {positive ? "+" : ""}
+                {positive ? '+' : ''}
                 {summary.revenueChange.toFixed(1)}%
               </span>
               <span>
@@ -139,13 +148,13 @@ export function FinancialSummaryCard({
               </span>
             </div>
             {failed ? (
-              <p className="mt-3 text-[11.5px] text-danger-300">
+              <p className="mt-2 text-[11.5px] text-danger-300 sm:mt-3">
                 No se pudo actualizar el resumen. Intenta nuevamente.
               </p>
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-white/8 pt-5 lg:flex lg:grid-cols-1 lg:flex-col lg:gap-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+          <div className="grid grid-cols-2 gap-2.5 border-t border-white/8 pt-3 lg:flex lg:grid-cols-1 lg:flex-col lg:gap-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0 ">
             <FinancialMetric
               label="Costo de inventario"
               note="Valorizacion al cierre"
@@ -161,10 +170,16 @@ export function FinancialSummaryCard({
         </div>
       </section>
 
-      <aside className="grid grid-cols-3 gap-2 rounded-card border border-border bg-card p-3 sm:flex sm:flex-col sm:p-5">
+      <aside className="grid grid-cols-3 gap-1.5 rounded-card border border-border bg-card p-2.5 sm:flex sm:flex-col sm:gap-2 sm:p-5">
         <div className="col-span-3 sm:col-span-1">
-          <h3 className="font-display text-[16px] font-medium">Hoy</h3>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">{todayLabel}</p>
+          <div className="flex items-baseline justify-between gap-3 sm:block">
+            <h3 className="font-display text-[15px] font-medium sm:text-[16px]">
+              Hoy
+            </h3>
+            <p className="truncate text-[11px] text-muted-foreground sm:mt-1 sm:text-[11.5px]">
+              {todayLabel}
+            </p>
+          </div>
         </div>
         <SnapshotRow
           label="Entradas"
@@ -182,14 +197,14 @@ export function FinancialSummaryCard({
           dotClass="bg-primary"
         />
         {outOfStockCount > 0 ? (
-          <div className="col-span-3 mt-1 flex items-start gap-2.5 rounded-[10px] bg-error-surface p-3">
-            <span className="font-display text-[22px] font-medium leading-none text-error">
+          <div className="col-span-3 mt-1 flex items-start gap-2.5 rounded-[10px] bg-error-surface p-2.5 sm:p-3">
+            <span className="font-display text-[20px] font-medium leading-none text-error sm:text-[22px]">
               {outOfStockCount}
             </span>
-            <span className="text-[11.5px] font-medium leading-tight text-error">
+            <span className="text-[11px] font-medium leading-tight text-error sm:text-[11.5px]">
               {outOfStockCount === 1
-                ? "Producto sin stock"
-                : "Productos sin stock"}
+                ? 'Producto sin stock'
+                : 'Productos sin stock'}
               <span className="mt-0.5 block text-[11px] font-normal text-error/75">
                 requiere reposicion urgente
               </span>
@@ -219,13 +234,15 @@ function FinancialMetric({
       </p>
       <p
         className={cn(
-          "mt-2 break-words font-display text-[20px] font-medium tracking-tight text-ink-foreground/95 sm:text-[24px]",
+          'mt-1.5 break-words font-display text-[20px] font-medium leading-tight tracking-[0.06em] text-ink-foreground/95 sm:mt-2 sm:text-[28px]',
           valueClassName,
         )}
       >
         {value}
       </p>
-      <p className="mt-1 text-[11px] text-ink-foreground/55">{note}</p>
+      <p className="mt-1 text-[10.5px] leading-tight tracking-wider text-ink-foreground/55 sm:text-[11px]">
+        {note}
+      </p>
     </div>
   );
 }
@@ -240,12 +257,12 @@ function SnapshotRow({
   dotClass: string;
 }) {
   return (
-    <div className="rounded-[10px] bg-surface-muted px-2.5 py-2 sm:flex sm:items-baseline sm:justify-between sm:border-b sm:border-dashed sm:border-border sm:bg-transparent sm:px-0 sm:py-2.5">
-      <span className="inline-flex items-center gap-2 text-[11.5px] text-muted-foreground">
-        <span className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+    <div className="rounded-[10px] bg-surface-muted px-2 py-1.5 sm:flex sm:items-baseline sm:justify-between sm:border-b sm:border-dashed sm:border-border sm:bg-transparent sm:px-0 sm:py-2.5">
+      <span className="inline-flex items-center gap-1.5 text-[10.5px] text-muted-foreground sm:gap-2 sm:text-[11.5px]">
+        <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
         {label}
       </span>
-      <span className="mt-1 block font-display text-[18px] font-medium text-foreground sm:mt-0">
+      <span className="mt-0.5 block font-display text-[16px] font-medium text-foreground sm:mt-0 sm:text-[18px]">
         {value}
       </span>
     </div>

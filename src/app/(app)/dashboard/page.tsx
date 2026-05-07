@@ -59,7 +59,7 @@ async function DashboardContent({ searchParams }: DashboardPageProps) {
   const isAdmin = user.role === "ADMIN";
 
   return (
-    <div className="space-y-3 pb-24 sm:space-y-3.5 lg:pb-12">
+    <div className="space-y-2.5 pb-24 sm:space-y-3.5 lg:pb-12">
       <QuickActions isAdmin={isAdmin} />
 
       {isAdmin ? (

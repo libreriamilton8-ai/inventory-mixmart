@@ -54,9 +54,9 @@ export function RecentMovementsPanel({
 
     /* .slice(0, filter === "all" ? 10 : 5); */
   return (
-    <section className="rounded-card border border-border bg-card p-4 sm:p-6">
+    <section className="rounded-card border border-border bg-card p-3 sm:p-6">
       <header className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-[17px] font-medium sm:text-[18px]">
+        <h3 className="font-display text-[16px] font-medium sm:text-[18px]">
           Movimientos recientes
         </h3>
         <Link
@@ -67,7 +67,7 @@ export function RecentMovementsPanel({
         </Link>
       </header>
 
-      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+      <div className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1 sm:mt-3">
         {filters.map((item) => (
           <Chip
             active={filter === item.value}
@@ -80,13 +80,13 @@ export function RecentMovementsPanel({
       </div>
 
       {visibleMovements.length ? (
-        <ul className="mt-1 divide-y divide-oat-100">
+        <ul className="divide-y divide-oat-100 sm:mt-1">
           {visibleMovements.map((movement) => (
             <MovementRow key={movement.id} movement={movement} />
           ))}
         </ul>
       ) : (
-        <p className="mt-6 text-[13px] text-muted-foreground">
+        <p className="mt-4 text-[12.5px] text-muted-foreground sm:mt-6 sm:text-[13px]">
           Sin movimientos para este filtro.
         </p>
       )}
@@ -106,7 +106,7 @@ function Chip({
   return (
     <button
       className={cn(
-        "shrink-0 rounded-pill border px-2.5 py-1 text-[11.5px] font-medium transition",
+        "shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-medium transition sm:text-[11.5px]",
         active
           ? "border-transparent bg-foreground text-background"
           : "border-transparent bg-surface-muted text-muted-foreground hover:border-border hover:text-foreground",
@@ -128,20 +128,20 @@ function MovementRow({ movement }: { movement: DashboardMovement }) {
   const positive = movement.direction === "IN";
 
   return (
-    <li className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:gap-3.5 sm:py-3.5">
+    <li className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5 py-2.5 sm:grid-cols-[auto_1fr_auto_auto] sm:gap-3.5 sm:py-3.5">
       <span
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
+          "flex size-8 shrink-0 items-center justify-center rounded-[10px] sm:size-9",
           config.iconClass,
         )}
       >
         <config.Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[13.5px] font-medium text-foreground">
+        <p className="truncate text-[13px] font-medium text-foreground sm:text-[13.5px]">
           {movement.product.name}
         </p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px] text-muted-foreground">
+        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground sm:gap-2 sm:text-[11.5px]">
           {movement.product.sku ? <span>{movement.product.sku}</span> : null}
           {movement.performedBy ? (
             <>
@@ -165,7 +165,7 @@ function MovementRow({ movement }: { movement: DashboardMovement }) {
       <span className="text-right">
         <span
           className={cn(
-            "block font-display text-[18px] font-medium leading-tight",
+            "block font-display text-[17px] font-medium leading-tight sm:text-[18px]",
             positive ? "text-accent-600" : "text-foreground",
           )}
         >

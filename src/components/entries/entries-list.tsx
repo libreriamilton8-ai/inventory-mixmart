@@ -1,4 +1,4 @@
-import { PackageCheck } from "lucide-react";
+import { PackageCheck, SpellCheck } from 'lucide-react';
 
 import {
   ActionTip,
@@ -9,18 +9,18 @@ import {
   Section,
   StatusBadge,
   iconBtnGood,
-} from "@/components/shared";
-import { dateRangeWhere, sumLineCost } from "@/lib/calc";
+} from '@/components/shared';
+import { dateRangeWhere, sumLineCost } from '@/lib/calc';
 import {
   formatCurrency,
   formatDate,
   formatDecimal,
   stockEntryStatusLabels,
-} from "@/lib/format";
-import { buildPaginationMeta, readPagination } from "@/lib/pagination";
-import prisma from "@/lib/prisma";
-import { receiveStockEntry } from "@/server/actions";
-import type { StockEntryStatus } from "../../../prisma/generated/client";
+} from '@/lib/format';
+import { buildPaginationMeta, readPagination } from '@/lib/pagination';
+import prisma from '@/lib/prisma';
+import { receiveStockEntry } from '@/server/actions';
+import type { StockEntryStatus } from '../../../prisma/generated/client';
 
 export type EntriesSearchParams = {
   q?: string;
@@ -46,7 +46,7 @@ export async function EntriesList({
     ...(searchParams.status ? { status: searchParams.status } : {}),
     ...(searchParams.supplierId ? { supplierId: searchParams.supplierId } : {}),
     ...(q
-      ? { referenceNumber: { contains: q, mode: "insensitive" as const } }
+      ? { referenceNumber: { contains: q, mode: 'insensitive' as const } }
       : {}),
   };
 
@@ -62,7 +62,7 @@ export async function EntriesList({
           },
         },
       },
-      orderBy: { orderedAt: "desc" },
+      orderBy: { orderedAt: 'desc' },
       skip: pagination.skip,
       take: pagination.take,
     }),
@@ -86,13 +86,13 @@ export async function EntriesList({
     <Section>
       <DataTable
         headers={[
-          "Referencia",
-          "Proveedor",
-          "Estado",
-          "Fecha",
-          "Items",
-          "Total",
-          "Acciones",
+          'Referencia',
+          'Proveedor',
+          'Estado',
+          'Fecha',
+          'Items',
+          'Total',
+          'Acciones',
         ]}
       >
         {entries.map((entry) => (
@@ -107,7 +107,9 @@ export async function EntriesList({
             </td>
             <td className="px-4 py-3">{entry.supplier.name}</td>
             <td className="px-4 py-3">
-              <StatusBadge tone={entry.status === "RECEIVED" ? "success" : "info"}>
+              <StatusBadge
+                tone={entry.status === 'RECEIVED' ? 'success' : 'info'}
+              >
                 {stockEntryStatusLabels[entry.status]}
               </StatusBadge>
             </td>
@@ -120,7 +122,7 @@ export async function EntriesList({
             <td className="relative w-40 px-4 py-3">
               <details className="relative">
                 <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary [&::-webkit-details-marker]:hidden">
-                  {entry.items.length} item{entry.items.length !== 1 ? "s" : ""}
+                  {entry.items.length} item{entry.items.length !== 1 ? 's' : ''}
                 </summary>
                 <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-card border border-border bg-surface p-2 shadow-md">
                   <ul className="space-y-1">
@@ -128,7 +130,9 @@ export async function EntriesList({
                       <li className="text-xs text-foreground" key={item.id}>
                         <span className="font-medium">{item.product.name}</span>
                         <span className="text-muted-foreground">
-                          {" "}— {formatDecimal(item.quantity, 0)} × {formatCurrency(item.unitCost)}
+                          {' '}
+                          — {formatDecimal(item.quantity, 0)} ×{' '}
+                          {formatCurrency(item.unitCost)}
                         </span>
                       </li>
                     ))}
@@ -140,7 +144,7 @@ export async function EntriesList({
               {formatCurrency(sumLineCost(entry.items))}
             </td>
             <td className="px-4 py-3">
-              {entry.status === "ORDERED" ? (
+              {entry.status === 'ORDERED' ? (
                 <ActionTip label="Recibir">
                   <IdActionForm
                     action={receiveStockEntry}
@@ -152,7 +156,15 @@ export async function EntriesList({
                   </IdActionForm>
                 </ActionTip>
               ) : (
-                <span className="text-xs text-muted-foreground">Aplicada</span>
+                <ActionTip label="Entrada recibida">
+                  <span
+                    aria-label="Entrada recibida"
+                    className={`${iconBtnGood} cursor-default`}
+                    role="img"
+                  >
+                    <SpellCheck aria-hidden="true" data-icon="icon" />
+                  </span>
+                </ActionTip>
               )}
             </td>
           </tr>
