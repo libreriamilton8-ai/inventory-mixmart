@@ -22,6 +22,7 @@ const TABLES = [
   "stock_entries",
   "product_suppliers",
   "products",
+  "brands",
   "suppliers",
   "users",
 ];
