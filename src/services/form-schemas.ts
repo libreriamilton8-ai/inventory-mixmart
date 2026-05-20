@@ -28,6 +28,10 @@ export const productSchema = z.object({
     .union([z.literal(""), z.coerce.number().finite().nonnegative()])
     .transform((value) => (value === "" ? null : value)),
   minimumStock: nonNegativeDecimal,
+  initialStock: z
+    .union([z.literal(""), nonNegativeDecimal])
+    .transform((v) => (v === "" ? 0 : v))
+    .default(0),
 });
 
 export const productUpdateSchema = productSchema.extend({

@@ -84,6 +84,7 @@ export async function createProductRecord(data: ProductInput) {
       purchasePrice: data.purchasePrice,
       salePrice: data.salePrice,
       minimumStock: data.minimumStock,
+      currentStock: data.initialStock,
     },
   });
 }

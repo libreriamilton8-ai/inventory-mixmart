@@ -25,8 +25,10 @@ export type ProductFormValues = {
 
 export async function ProductForm({
   product,
+  isAdmin,
 }: {
   product?: ProductFormValues;
+  isAdmin?: boolean;
 }) {
   const brands = await getBrands();
   const isEdit = Boolean(product);
@@ -158,6 +160,21 @@ export async function ProductForm({
             />
           </Field>
         </div>
+        {isAdmin && !isEdit ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label="Stock inicial">
+              <input
+                className="input"
+                defaultValue="0"
+                min="0"
+                name="initialStock"
+                placeholder="0"
+                step="1"
+                type="number"
+              />
+            </Field>
+          </div>
+        ) : null}
         <p className="rounded-control border border-border bg-surface-muted px-3 py-2 text-[11.5px] text-muted-foreground">
           Estos precios se autocompletan al registrar entradas o salidas. Puedes
           ajustarlos en cada operacion sin tocar el catalogo.
